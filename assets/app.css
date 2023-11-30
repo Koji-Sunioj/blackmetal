@@ -1,0 +1,19 @@
+h1, h2, h3, p, a, li  {
+       font-family: 'Old English Five', Tahoma;
+       color: white;
+}
+
+i { 
+	color: white;
+	font-size: 80%;
+
+}
+
+a {
+	color: red;
+
+}
+
+body {
+	background-color: black;
+}
