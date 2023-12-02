@@ -1,7 +1,31 @@
-h1, h2, h3, p, a, li  {
+h1, h2, h3, p, a, li, label, input, button  {
        font-family: 'Old English Five', Tahoma;
        color: white;
 }
+
+
+input, select {
+  color-scheme: dark;
+  background: transparent;
+  padding: 0px 0px 2px 0px;
+  margin: 8px 0px 16px 0px;
+  border: none;
+  border-bottom: 1px solid white;
+  outline:none;
+}
+
+
+input:hover, input:focus, button:hover, button:focus {
+  text-shadow: red 2px 2px 5px;
+}
+
+button  {
+  background-color: black;
+  color: white;  
+}
+
+
+
 
 i { 
 	color: white;
