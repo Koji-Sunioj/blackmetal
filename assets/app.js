@@ -1,28 +1,53 @@
-console.log(window.location.pathname);
-console.log(window.location.search);
+const checkPurpose = () => {
+  if (window.location.href.includes("sign-in")) {
+    document.querySelector("h1").innerHTML = "Sign In";
+    document
+      .querySelector("form")
+      .setAttribute("onsubmit", "return signIn(event)");
+  }
+};
 
-let params = new URLSearchParams(document.location.search);
-let name = params.get("something"); // is the string "Jonathan"
-console.log(name);
-console.log(params)
+const signIn = async (event) => {
+  event.preventDefault();
+  const {
+    target: {
+      username: { value: username },
+      password: { value: password },
+    },
+  } = event;
+  const url = "http://localhost/api/sign-in";
+  const response = await fetch(url, {
+    body: JSON.stringify({ username: username, password: password }),
+    method: "POST",
+  });
+  const { status } = response;
+  const { detail, header } = await response.json();
+  const myHeaders = new Headers();
+  myHeaders.set("Authorization", header);
+};
 
-const myFunction = async (event) => {
-	event.preventDefault();
-	const {
-	  target: {
-	    username: { value: username },
-	    password: { value: password },
-		},
-	} = event;
-	const url = "/api/register";
-	const response = await fetch(url,
-	{
-		body: JSON.stringify({"username":username,"password":password}),
-		method:"POST"
-	});
-	const { detail } = await response.json();
-	
-	alert(detail)
-}
+const signUp = async (event) => {
+  event.preventDefault();
+  const {
+    target: {
+      username: { value: username },
+      password: { value: password },
+    },
+  } = event;
+  const url = "/api/register";
+  const response = await fetch(url, {
+    body: JSON.stringify({ username: username, password: password }),
+    method: "POST",
+  });
+  const { status } = response;
+  const { detail } = await response.json();
 
+  alert(detail);
 
+  if (status === 200) {
+    const {
+      location: { href: uri },
+    } = window;
+    window.location.replace(uri.replace("/register", "/"));
+  }
+};
