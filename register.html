@@ -10,11 +10,11 @@
     <div id="nav">
       <a href="/">Homepage</a>
       <a href="/products">Products</a>
-      <a href="/my-account">My account</a>
+      <a href="/sign-in">Sign In</a>
     </div>
     <hr />
     <h1>Register as a new user</h1>
-    <form id="form_id" method="POST" onsubmit="signUp(event)">
+    <form id="form_id" onsubmit="signUp(event)" autocomplete="off">
       <label for="username">username:</label>
       <input
         type="text"
