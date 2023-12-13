@@ -79,10 +79,12 @@ const signIn = async (event) => {
     },
   } = event;
   const url = "/api/sign-in";
+
   const response = await fetch(url, {
     body: JSON.stringify({ username: username, password: password }),
     method: "POST",
   });
+
   const { status } = response;
   const { detail, token } = await response.json();
   alert(detail);
