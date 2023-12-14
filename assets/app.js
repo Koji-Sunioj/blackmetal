@@ -27,9 +27,57 @@ const checkSession = async () => {
     case "/sign-in":
       renderSignIn();
       break;
+    case "/albums":
+      renderAlbums();
+      break;
   }
 
   navBar.appendChild(anchor);
+};
+
+const createElements = (tags) => {
+  const tagsObj = {};
+  tags.forEach((tag) => {
+    const { name, type } = tag;
+    tagsObj[name] = document.createElement(type);
+  });
+  return tagsObj;
+};
+
+const renderAlbums = async () => {
+  const url = `/api/albums`;
+  const response = await fetch(url);
+  const { albums } = await response.json();
+
+  const albumsDiv = document.getElementById("albums");
+  albums.forEach((album) => {
+    const { title, name, release_year, photo, stock, price } = album;
+    const { targetDiv, anchor, releaseP, stockP, priceP, image, br } =
+      createElements([
+        { name: "br", type: "br" },
+        { name: "targetDiv", type: "div" },
+        { name: "anchor", type: "a" },
+        { name: "releaseP", type: "p" },
+        { name: "stockP", type: "p" },
+        { name: "priceP", type: "p" },
+        { name: "image", type: "img" },
+      ]);
+
+    targetDiv.classList.add("albums-div");
+    const albumUri = `/artist/${name}/album/${title}`;
+    anchor.setAttribute("href", albumUri);
+    anchor.innerText = `${name} - ${title}`;
+    releaseP.innerText = `release year: ${release_year}`;
+    priceP.innerText = `price: ${price}`;
+    stockP.innerText = `stock: ${stock}`;
+    image.src = `/common/${photo}`;
+
+    [image, br, anchor, releaseP, priceP, stockP].forEach((item) => {
+      targetDiv.appendChild(item);
+    });
+
+    albumsDiv.appendChild(targetDiv);
+  });
 };
 
 const logOut = () => {
