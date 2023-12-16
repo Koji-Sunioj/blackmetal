@@ -1,10 +1,38 @@
 const checkSession = async () => {
-  const navBar = document.getElementById("nav");
-  const anchor = document.createElement("a");
   const {
     location: { pathname: uri },
   } = window;
 
+  switch (uri) {
+    case "/register":
+    case "/sign-in":
+      renderAuthForm(uri);
+      break;
+    case "/albums":
+      const {
+        location: { search },
+      } = window;
+      const url = new URLSearchParams(search);
+      const page = url.get("page"),
+        sort = url.get("sort"),
+        direction = url.get("direction"),
+        query = url.get("query");
+      const shouldRedirect = [page, sort, direction].some(
+        (param) => param === null
+      );
+      if (shouldRedirect) {
+        url.set("page", "1");
+        url.set("sort", "name");
+        url.set("direction", "ascending");
+        window.location.search = url;
+      } else {
+        renderAlbums(page, sort, direction, query);
+      }
+      break;
+  }
+
+  const navBar = document.getElementById("nav");
+  const anchor = document.createElement("a");
   try {
     const loginToken = document.cookie.match(/token=(.*$)/)[1];
     const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
@@ -23,16 +51,23 @@ const checkSession = async () => {
     anchor.setAttribute("href", "/sign-in");
     anchor.innerText = "Sign in";
   }
-  switch (uri) {
-    case "/sign-in":
-      renderSignIn();
-      break;
-    case "/albums":
-      renderAlbums();
-      break;
-  }
-
   navBar.appendChild(anchor);
+};
+
+const submitQuery = (event) => {
+  event.preventDefault();
+  const {
+    location: { search },
+  } = window;
+  const {
+    target: {
+      query: { value: query },
+    },
+  } = event;
+
+  const url = new URLSearchParams(search);
+  query.length > 0 ? url.set("query", query) : url.delete("query");
+  window.location.search = url;
 };
 
 const createElements = (tags) => {
@@ -44,8 +79,10 @@ const createElements = (tags) => {
   return tagsObj;
 };
 
-const renderAlbums = async () => {
-  const url = `/api/albums`;
+const renderAlbums = async (page, sort, direction, query) => {
+  const searchParam = query === null ? "" : `&query=${query}`;
+  const url = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
+  document.getElementById("query").value = query;
   const response = await fetch(url);
   const { albums } = await response.json();
 
@@ -84,17 +121,26 @@ const logOut = () => {
   document.cookie = "token=; Max-Age=0; path=/; domain=" + location.host;
 };
 
-const renderSignIn = () => {
-  document.querySelector("h1").innerHTML = "Sign In";
-  const nodes = ["a", "br"].map((tag) => document.createElement(tag));
-  const anchor = nodes.find((node) => node.tagName === "A");
-  anchor.setAttribute("href", "/register");
-  anchor.innerText = "don't have an account? sign up!";
-  const form = document.getElementById("form_id");
-  nodes.forEach((node) => {
-    form.after(node);
-  });
-  form.setAttribute("onsubmit", "return signIn(event)");
+const renderAuthForm = (uri) => {
+  let h1text = "";
+  switch (uri) {
+    case "/register":
+      h1text = "Register as new user";
+      break;
+    case "/sign-in":
+      h1text = "Sign In";
+      const nodes = ["a", "br"].map((tag) => document.createElement(tag));
+      const anchor = nodes.find((node) => node.tagName === "A");
+      anchor.setAttribute("href", "/register");
+      anchor.innerText = "don't have an account? sign up!";
+      const form = document.getElementById("form_id");
+      nodes.forEach((node) => {
+        form.after(node);
+      });
+      break;
+  }
+
+  document.querySelector("h1").innerHTML = h1text;
 };
 
 const renderUser = async (username, token) => {
@@ -118,7 +164,7 @@ const renderUser = async (username, token) => {
   });
 };
 
-const signIn = async (event) => {
+const auth = async (event) => {
   event.preventDefault();
   const {
     target: {
@@ -126,7 +172,11 @@ const signIn = async (event) => {
       password: { value: password },
     },
   } = event;
-  const url = "/api/sign-in";
+
+  const {
+    location: { pathname: uri },
+  } = window;
+  const url = `/api${uri}`;
 
   const response = await fetch(url, {
     body: JSON.stringify({ username: username, password: password }),
@@ -136,52 +186,7 @@ const signIn = async (event) => {
   const { status } = response;
   const { detail, token } = await response.json();
   alert(detail);
-  if (status == 200) {
-    const {
-      location: { href: uri },
-    } = window;
-    document.cookie = `token=${token}`;
-    window.location.replace(uri.replace("/sign-in", "/"));
-  }
+
+  if (uri === "/sign-in") document.cookie = `token=${token}`;
+  status === 200 && window.location.replace(uri.replace(uri, "/"));
 };
-
-const signUp = async (event) => {
-  event.preventDefault();
-  const {
-    target: {
-      username: { value: username },
-      password: { value: password },
-    },
-  } = event;
-  const url = "/api/register";
-  const response = await fetch(url, {
-    body: JSON.stringify({ username: username, password: password }),
-    method: "POST",
-  });
-  const { status } = response;
-  const { detail } = await response.json();
-
-  alert(detail);
-
-  if (status === 200) {
-    const {
-      location: { href: uri },
-    } = window;
-    window.location.replace(uri.replace("/register", "/"));
-  }
-};
-
-/*  const url = "/api/check-token";
-    const response = await fetch(url, { body: loginTOken, method: "POST" });
-    const { status } = response;
-
-    switch (status) {
-      case 200:
-        anchor.setAttribute("href", "/my-account");
-        anchor.innerText = "My account";
-        break;
-      case 401:
-        anchor.setAttribute("href", "/sign-in");
-        anchor.innerText = "Sign in";
-        break;
-    } */

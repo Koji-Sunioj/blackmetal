@@ -1,43 +1,58 @@
-h1, h2, h3, p, a, li, label, input, button  {
-       font-family: 'Old English Five', Tahoma;
-       color: white;
+h1,
+h2,
+h3,
+p,
+a,
+li,
+label,
+input,
+button {
+  font-family: "Old English Five", Tahoma;
+  color: white;
 }
 
+#albums {
+  display: grid;
+  grid-template-columns: auto auto;
+}
 
-input, select {
+.albums-div > img {
+  object-fit: cover;
+  height: 40vh;
+}
+
+input,
+select {
   color-scheme: dark;
   background: transparent;
   padding: 0px 0px 2px 0px;
   margin: 8px 0px 16px 0px;
   border: none;
   border-bottom: 1px solid white;
-  outline:none;
+  outline: none;
 }
 
-
-input:hover, input:focus, button:hover, button:focus {
+input:hover,
+input:focus,
+button:hover,
+button:focus {
   text-shadow: red 2px 2px 5px;
 }
 
-button  {
+button {
   background-color: black;
-  color: white;  
+  color: white;
 }
 
-
-
-
-i { 
-	color: white;
-	font-size: 80%;
-
+i {
+  color: white;
+  font-size: 80%;
 }
 
 a {
-	color: red;
-
+  color: red;
 }
 
 body {
-	background-color: black;
+  background-color: black;
 }

@@ -9,10 +9,16 @@
   <body onload="checkSession()">
     <div id="nav">
       <a href="/">Homepage</a>
-      <a href="/albums">Products</a>
+      <a href="/albums">Albums</a>
     </div>
     <hr />
-    <h1>Albums for sales:</h1>
+    <h1>Albums for sale:</h1>
+    <form onsubmit="submitQuery(event)">
+      <label for="query">search by:</label>
+      <input type="search" name="query" id="query" />
+      <button type="submit">submit</button>
+    </form>
+    <br />
     <div id="albums"></div>
   </body>
 </html>
