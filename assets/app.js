@@ -3,7 +3,10 @@ const checkSession = async () => {
     location: { pathname: uri },
   } = window;
 
-  switch (uri) {
+  const refinedURI =
+    uri.includes("/album") && uri.includes("/artist") ? "artist-album" : uri;
+
+  switch (refinedURI) {
     case "/register":
     case "/sign-in":
       renderAuthForm(uri);
@@ -29,6 +32,9 @@ const checkSession = async () => {
         renderAlbums(page, sort, direction, query);
       }
       break;
+    case "artist-album":
+      renderAlbum(uri);
+      break;
   }
 
   const navBar = document.getElementById("nav");
@@ -52,6 +58,48 @@ const checkSession = async () => {
     anchor.innerText = "Sign in";
   }
   navBar.appendChild(anchor);
+};
+
+const renderAlbum = async (uri) => {
+  const noSpaces = uri.replace(/%20/g, " ");
+  const artistPattern = /(?<=artist\/)[\D]+(?=\/album)/,
+    albumPattern = /(?<=album\/)[\D]+/;
+  const artist_name = noSpaces.match(artistPattern)[0],
+    album_title = noSpaces.match(albumPattern)[0];
+
+  const url = `/api/albums/${artist_name}/${album_title}`;
+  const response = await fetch(url);
+  const { album } = await response.json();
+  const { title, name, release_year, photo, stock, price } = album;
+
+  const { artistA, artistP, releaseP, stockP, priceP, image, br } =
+    createElements([
+      { name: "artistA", type: "a" },
+      { name: "artistP", type: "p" },
+      { name: "br", type: "br" },
+      { name: "releaseP", type: "p" },
+      { name: "stockP", type: "p" },
+      { name: "priceP", type: "p" },
+      { name: "image", type: "img" },
+    ]);
+
+  image.src = `/common/${photo}`;
+  image.classList.add("album-img");
+
+  artistA.setAttribute("href", `/artist/${name}`);
+  artistA.innerText = name;
+  artistP.innerText = "artist: ";
+  artistP.appendChild(artistA);
+
+  releaseP.innerText = `release year: ${release_year}`;
+  priceP.innerText = `price: ${price}`;
+  stockP.innerText = `stock: ${stock}`;
+  document.querySelector("h1").innerText = title;
+
+  const albumDiv = document.getElementById("album");
+  [image, br, artistP, releaseP, priceP, stockP].forEach((item) => {
+    albumDiv.appendChild(item);
+  });
 };
 
 const submitQuery = (event) => {

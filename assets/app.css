@@ -22,6 +22,7 @@ button {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  width: 80vw;
 }
 
 .query-item > button {
@@ -31,6 +32,10 @@ button {
 .query-item > input,
 select {
   width: 10vw;
+}
+.album-img {
+  object-fit: cover;
+  height: 40vh;
 }
 
 .albums-div > img {
