@@ -18,6 +18,13 @@ button {
   grid-template-columns: auto auto;
 }
 
+#album {
+  display: flex;
+
+  flex-direction: row;
+  gap: 30px 20px;
+}
+
 #search-form {
   display: flex;
   flex-direction: row;
@@ -35,12 +42,12 @@ select {
 }
 .album-img {
   object-fit: cover;
-  height: 40vh;
+  height: 40vw;
 }
 
 .albums-div > img {
   object-fit: cover;
-  height: 40vh;
+  height: 50vh;
 }
 
 input,

@@ -4,7 +4,8 @@ const checkSession = async () => {
   } = window;
 
   const refinedURI =
-    uri.includes("/album") && uri.includes("/artist") ? "artist-album" : uri;
+    uri.includes("/album") && uri.includes("/artist") ? "/artist-album" : uri;
+  const { user, token } = checkToken();
 
   switch (refinedURI) {
     case "/register":
@@ -32,74 +33,110 @@ const checkSession = async () => {
         renderAlbums(page, sort, direction, query);
       }
       break;
-    case "artist-album":
-      renderAlbum(uri);
+    case "/artist-album":
+      renderAlbum(uri, token);
+      break;
+    case "/my-account":
+      renderUser(user, token);
       break;
   }
 
   const navBar = document.getElementById("nav");
   const anchor = document.createElement("a");
-  try {
-    const loginToken = document.cookie.match(/token=(.*$)/)[1];
-    const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
-    if (jwtPayload["iat"] > Number(new Date())) {
-      throw new Error("expired token");
-    }
+
+  if (user !== null && token !== null) {
     anchor.setAttribute("href", "/my-account");
     anchor.innerText = "My account";
-
-    switch (uri) {
-      case "/my-account":
-        await renderUser(jwtPayload["sub"], loginToken);
-        break;
-    }
-  } catch (error) {
+  } else {
     anchor.setAttribute("href", "/sign-in");
     anchor.innerText = "Sign in";
   }
   navBar.appendChild(anchor);
 };
 
-const renderAlbum = async (uri) => {
+const checkToken = () => {
+  try {
+    const loginToken = document.cookie.match(/token=(.*$)/)[1];
+    const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
+    if (jwtPayload["iat"] > Number(new Date())) {
+      throw new Error("expired token");
+    }
+    return { user: jwtPayload["sub"], token: loginToken };
+  } catch (error) {
+    console.log(error);
+    return { user: null, token: null };
+  }
+};
+
+const renderAlbum = async (uri, token) => {
   const noSpaces = uri.replace(/%20/g, " ");
-  const artistPattern = /(?<=artist\/)[\D]+(?=\/album)/,
-    albumPattern = /(?<=album\/)[\D]+/;
+  const artistPattern = /(?<=artist\/)[\D\d]+(?=\/album)/,
+    albumPattern = /(?<=album\/)[\D\d]+/;
   const artist_name = noSpaces.match(artistPattern)[0],
     album_title = noSpaces.match(albumPattern)[0];
 
   const url = `/api/albums/${artist_name}/${album_title}`;
-  const response = await fetch(url);
-  const { album } = await response.json();
-  const { title, name, release_year, photo, stock, price } = album;
 
-  const { artistA, artistP, releaseP, stockP, priceP, image, br } =
-    createElements([
-      { name: "artistA", type: "a" },
-      { name: "artistP", type: "p" },
-      { name: "br", type: "br" },
-      { name: "releaseP", type: "p" },
-      { name: "stockP", type: "p" },
-      { name: "priceP", type: "p" },
-      { name: "image", type: "img" },
-    ]);
+  const response = await fetch(url);
+  const {
+    album: { title, name, release_year, photo, stock, price },
+  } = await response.json();
+
+  const {
+    artistA,
+    artistP,
+    releaseP,
+    stockP,
+    priceP,
+    image,
+    salesBtn,
+    albumP,
+  } = createElements([
+    { name: "salesBtn", type: "button" },
+    { name: "artistA", type: "a" },
+    { name: "artistP", type: "p" },
+    { name: "albumP", type: "p" },
+    { name: "releaseP", type: "p" },
+    { name: "stockP", type: "p" },
+    { name: "priceP", type: "p" },
+    { name: "image", type: "img" },
+  ]);
 
   image.src = `/common/${photo}`;
   image.classList.add("album-img");
+  const albumDiv = document.getElementById("album");
+  albumDiv.appendChild(image);
 
   artistA.setAttribute("href", `/artist/${name}`);
   artistA.innerText = name;
+
   artistP.innerText = "artist: ";
   artistP.appendChild(artistA);
-
+  albumP.innerText = `title: ${title}`;
   releaseP.innerText = `release year: ${release_year}`;
   priceP.innerText = `price: ${price}`;
   stockP.innerText = `stock: ${stock}`;
-  document.querySelector("h1").innerText = title;
 
-  const albumDiv = document.getElementById("album");
-  [image, br, artistP, releaseP, priceP, stockP].forEach((item) => {
-    albumDiv.appendChild(item);
+  const elements = [artistP, albumP, releaseP, priceP, stockP];
+
+  if (token !== null) {
+    salesBtn.innerText = "Buy album";
+    salesBtn.onclick = () => {
+      buyAlbum(token);
+    };
+    elements.push(salesBtn);
+  }
+
+  const infoDiv = document.getElementById("info-div");
+  elements.forEach((item) => {
+    infoDiv.appendChild(item);
   });
+
+  albumDiv.appendChild(infoDiv);
+};
+
+const buyAlbum = (token) => {
+  alert(token);
 };
 
 const submitQuery = (event) => {
