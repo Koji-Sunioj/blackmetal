@@ -61,12 +61,23 @@ const submitQuery = (event) => {
   } = window;
   const {
     target: {
+      sort: { value: sort },
       query: { value: query },
+      direction: { value: direction },
     },
   } = event;
 
   const url = new URLSearchParams(search);
-  query.length > 0 ? url.set("query", query) : url.delete("query");
+  url.set("sort", sort);
+  url.set("direction", direction);
+
+  if (query.length > 0 && url.get("query") !== query) {
+    url.set("query", query);
+    url.set("page", "1");
+  } else if (query.length === 0 && url.get("query") !== null) {
+    url.delete("query");
+  }
+
   window.location.search = url;
 };
 
@@ -82,9 +93,13 @@ const createElements = (tags) => {
 const renderAlbums = async (page, sort, direction, query) => {
   const searchParam = query === null ? "" : `&query=${query}`;
   const url = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
-  document.getElementById("query").value = query;
+
+  document.querySelector("[name='query']").value = query;
+  document.querySelector("[name='direction']").value = direction;
+  document.querySelector("[name='sort']").value = sort;
+
   const response = await fetch(url);
-  const { albums } = await response.json();
+  const { albums, pages } = await response.json();
 
   const albumsDiv = document.getElementById("albums");
   albums.forEach((album) => {
@@ -114,6 +129,21 @@ const renderAlbums = async (page, sort, direction, query) => {
     });
 
     albumsDiv.appendChild(targetDiv);
+  });
+
+  const pageDiv = document.getElementById("pages");
+  [...Array(pages).keys()].forEach((dbPage) => {
+    const htmlRef = dbPage + 1;
+    const pageUrl = `albums?page=${htmlRef}&sort=${sort}&direction=${direction}${searchParam}`;
+
+    const anchor = document.createElement("a");
+    anchor.setAttribute("href", pageUrl);
+    anchor.innerHTML = htmlRef;
+
+    pageDiv.appendChild(anchor);
+    if (htmlRef !== pages) {
+      pageDiv.append(",");
+    }
   });
 };
 

@@ -13,12 +13,39 @@
     </div>
     <hr />
     <h1>Albums for sale:</h1>
-    <form onsubmit="submitQuery(event)">
-      <label for="query">search by:</label>
-      <input type="search" name="query" id="query" />
-      <button type="submit">submit</button>
+    <form onsubmit="submitQuery(event)" id="search-form">
+      <div class="query-item">
+        <label for="query">search by:</label>
+        <input type="search" name="query" />
+      </div>
+      <div class="query-item">
+        <label for="sort">Sort results:</label>
+        <select name="sort">
+          <optgroup label="Artist">
+            <option value="name">name</option>
+          </optgroup>
+          <optgroup label="Album">
+            <option value="title">title</option>
+            <option value="stock">stock</option>
+            <option value="price">price</option>
+            <option value="release_year">release year</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="query-item">
+        <label for="direction">Sort direction:</label>
+        <select name="direction">
+          <option value="ascending">ascending</option>
+          <option value="descending">descending</option>
+        </select>
+      </div>
+      <div class="query-item">
+        <button type="submit">submit</button>
+      </div>
     </form>
+    <hr />
     <br />
     <div id="albums"></div>
+    <p id="pages">pages:</p>
   </body>
 </html>

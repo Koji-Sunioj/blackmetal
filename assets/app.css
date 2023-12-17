@@ -6,6 +6,8 @@ a,
 li,
 label,
 input,
+option,
+select,
 button {
   font-family: "Old English Five", Tahoma;
   color: white;
@@ -14,6 +16,21 @@ button {
 #albums {
   display: grid;
   grid-template-columns: auto auto;
+}
+
+#search-form {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.query-item > button {
+  margin: 8px 0px 16px 0px;
+}
+
+.query-item > input,
+select {
+  width: 10vw;
 }
 
 .albums-div > img {
