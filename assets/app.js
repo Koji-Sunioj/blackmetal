@@ -63,7 +63,6 @@ const checkToken = () => {
     }
     return { user: jwtPayload["sub"], token: loginToken };
   } catch (error) {
-    console.log(error);
     return { user: null, token: null };
   }
 };
@@ -78,61 +77,81 @@ const renderAlbum = async (uri, token) => {
   const url = `/api/albums/${artist_name}/${album_title}`;
 
   const response = await fetch(url);
-  const {
-    album: { title, name, release_year, photo, stock, price },
-  } = await response.json();
+  const { album, songs } = await response.json();
 
-  const {
-    artistA,
-    artistP,
-    releaseP,
-    stockP,
-    priceP,
-    image,
-    salesBtn,
-    albumP,
-  } = createElements([
+  const { image, salesBtn, artistA, table, hr } = createElements([
     { name: "salesBtn", type: "button" },
     { name: "artistA", type: "a" },
-    { name: "artistP", type: "p" },
-    { name: "albumP", type: "p" },
-    { name: "releaseP", type: "p" },
-    { name: "stockP", type: "p" },
-    { name: "priceP", type: "p" },
     { name: "image", type: "img" },
+    { name: "hr", type: "hr" },
+    { name: "table", type: "table" },
   ]);
 
-  image.src = `/common/${photo}`;
+  image.src = `/common/${album.photo}`;
   image.classList.add("album-img");
-  const albumDiv = document.getElementById("album");
-  albumDiv.appendChild(image);
+  const imgDiv = document.getElementById("img-div");
+  imgDiv.appendChild(image);
 
-  artistA.setAttribute("href", `/artist/${name}`);
-  artistA.innerText = name;
+  const paragraphs = Object.keys(album)
+    .filter((info) => info !== "photo")
+    .map((info) => {
+      const text = info.split("_").join(" ");
+      const paragraph = document.createElement("p");
+      paragraph.classList.add("album-p");
+      if (info === "name") {
+        paragraph.innerText = `${text}: `;
+        artistA.setAttribute("href", `/artist/${album[info]}`);
+        artistA.innerText = album[info];
+        paragraph.appendChild(artistA);
+      } else {
+        paragraph.innerText = `${text}: ${album[info]}`;
+      }
+      return paragraph;
+    });
 
-  artistP.innerText = "artist: ";
-  artistP.appendChild(artistA);
-  albumP.innerText = `title: ${title}`;
-  releaseP.innerText = `release year: ${release_year}`;
-  priceP.innerText = `price: ${price}`;
-  stockP.innerText = `stock: ${stock}`;
+  songs.forEach((dbSong) => {
+    const row = document.createElement("tr");
+    Object.keys(dbSong).forEach((item) => {
+      if (dbSong[item] !== null) {
+        let text = "";
+        switch (item) {
+          case "track":
+            text = `${dbSong[item]}. `;
+            break;
+          case "duration":
+            const slice = dbSong[item] >= 600 ? 14 : 15;
+            text = `${new Date(dbSong[item] * 1000)
+              .toISOString()
+              .slice(slice, 19)}`;
+            break;
+          case "song":
+            text = `${dbSong[item]}`;
+            break;
+        }
+        const td = document.createElement("td");
+        td.innerText = text;
+        row.appendChild(td);
+      }
+    });
 
-  const elements = [artistP, albumP, releaseP, priceP, stockP];
+    table.appendChild(row);
+  });
 
-  if (token !== null) {
+  const infoDiv = document.getElementById("info-div");
+  paragraphs.forEach((item) => {
+    infoDiv.appendChild(item);
+  });
+
+  infoDiv.appendChild(hr);
+  infoDiv.appendChild(table);
+
+  if (token !== null && album.stock > 0) {
     salesBtn.innerText = "Buy album";
     salesBtn.onclick = () => {
       buyAlbum(token);
     };
-    elements.push(salesBtn);
+    infoDiv.appendChild(salesBtn);
   }
-
-  const infoDiv = document.getElementById("info-div");
-  elements.forEach((item) => {
-    infoDiv.appendChild(item);
-  });
-
-  albumDiv.appendChild(infoDiv);
 };
 
 const buyAlbum = (token) => {
@@ -188,28 +207,33 @@ const renderAlbums = async (page, sort, direction, query) => {
 
   const albumsDiv = document.getElementById("albums");
   albums.forEach((album) => {
-    const { title, name, release_year, photo, stock, price } = album;
-    const { targetDiv, anchor, releaseP, stockP, priceP, image, br } =
-      createElements([
-        { name: "br", type: "br" },
-        { name: "targetDiv", type: "div" },
-        { name: "anchor", type: "a" },
-        { name: "releaseP", type: "p" },
-        { name: "stockP", type: "p" },
-        { name: "priceP", type: "p" },
-        { name: "image", type: "img" },
-      ]);
+    const { title, name, photo } = album;
+    const { targetDiv, anchor, image } = createElements([
+      { name: "targetDiv", type: "div" },
+      { name: "anchor", type: "a" },
+      { name: "image", type: "img" },
+    ]);
+
+    const paragraphs = Object.keys(album)
+      .filter((info) => ["release_year", "stock", "price"].includes(info))
+      .map((info) => {
+        const text = info.split("_").join(" ");
+        const paragraph = document.createElement("p");
+        paragraph.classList.add("album-p");
+        paragraph.innerText = `${text}: ${album[info]}`;
+        return paragraph;
+      });
 
     targetDiv.classList.add("albums-div");
-    const albumUri = `/artist/${name}/album/${title}`;
+    const albumUri = `/artist/${name
+      .toLowerCase()
+      .replace(" ", "-")}/album/${title.toLowerCase().replace(" ", "-")}`;
     anchor.setAttribute("href", albumUri);
     anchor.innerText = `${name} - ${title}`;
-    releaseP.innerText = `release year: ${release_year}`;
-    priceP.innerText = `price: ${price}`;
-    stockP.innerText = `stock: ${stock}`;
     image.src = `/common/${photo}`;
+    image.classList.add("albums-img");
 
-    [image, br, anchor, releaseP, priceP, stockP].forEach((item) => {
+    [image, anchor, ...paragraphs].forEach((item) => {
       targetDiv.appendChild(item);
     });
 
@@ -220,11 +244,9 @@ const renderAlbums = async (page, sort, direction, query) => {
   [...Array(pages).keys()].forEach((dbPage) => {
     const htmlRef = dbPage + 1;
     const pageUrl = `albums?page=${htmlRef}&sort=${sort}&direction=${direction}${searchParam}`;
-
     const anchor = document.createElement("a");
     anchor.setAttribute("href", pageUrl);
     anchor.innerHTML = htmlRef;
-
     pageDiv.appendChild(anchor);
     if (htmlRef !== pages) {
       pageDiv.append(",");

@@ -8,21 +8,17 @@ label,
 input,
 option,
 select,
+td,
 button {
   font-family: "Old English Five", Tahoma;
   color: white;
 }
 
+/* albums page */
+
 #albums {
   display: grid;
   grid-template-columns: auto auto;
-}
-
-#album {
-  display: flex;
-
-  flex-direction: row;
-  gap: 30px 20px;
 }
 
 #search-form {
@@ -36,19 +32,56 @@ button {
   margin: 8px 0px 16px 0px;
 }
 
+.albums-img {
+  padding-top: 20px;
+  padding-bottom: 20px;
+  display: block;
+}
+
 .query-item > input,
 select {
   width: 10vw;
 }
+
+/* album page */
+
+#album {
+  display: flex;
+  flex-direction: row;
+  gap: 30px;
+}
+
+#album > div {
+  flex: 1;
+}
+
+#info-div > button {
+  margin-top: 10px;
+}
+
 .album-img {
-  object-fit: cover;
-  height: 40vw;
+  width: 100%;
+}
+
+table td,
+table td * {
+  vertical-align: top;
+}
+
+.album-p {
+  margin: 4px 0px 4px 0px;
+}
+
+#info-div > table > tr > td:nth-child(3) {
+  text-align: end;
 }
 
 .albums-div > img {
   object-fit: cover;
   height: 50vh;
 }
+
+/* misc */
 
 input,
 select {
