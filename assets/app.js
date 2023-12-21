@@ -1,10 +1,20 @@
+//render functions
+
 const checkSession = async () => {
   const {
     location: { pathname: uri },
   } = window;
 
-  const refinedURI =
-    uri.includes("/album") && uri.includes("/artist") ? "/artist-album" : uri;
+  let refinedURI = "";
+
+  if (uri.includes("artist")) {
+    refinedURI += uri.includes("album")
+      ? uri.replace(/(?<=\/artist)\/.+\/.+/, "-album")
+      : uri.replace(/(?<=\/artist)\/.[^\/]*$/, "");
+  } else {
+    refinedURI += uri;
+  }
+
   const { user, token } = checkToken();
 
   switch (refinedURI) {
@@ -33,6 +43,10 @@ const checkSession = async () => {
         renderAlbums(page, sort, direction, query);
       }
       break;
+    case "/artist":
+      renderArtist(uri);
+
+      break;
     case "/artist-album":
       renderAlbum(uri, token);
       break;
@@ -54,17 +68,77 @@ const checkSession = async () => {
   navBar.appendChild(anchor);
 };
 
-const checkToken = () => {
-  try {
-    const loginToken = document.cookie.match(/token=(.*$)/)[1];
-    const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
-    if (jwtPayload["iat"] > Number(new Date())) {
-      throw new Error("expired token");
+const createElements = (tags) => {
+  const tagsObj = {};
+  tags.forEach((tag) => {
+    const { name, type } = tag;
+    tagsObj[name] = document.createElement(type);
+  });
+  return tagsObj;
+};
+
+const renderArtist = async (uri) => {
+  const artist = uri.split("/")[2];
+  const url = `/api/artist/${artist}`;
+  await fetch(url);
+};
+
+const renderAlbums = async (page, sort, direction, query) => {
+  const searchParam = query === null ? "" : `&query=${query}`;
+  const url = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
+
+  document.querySelector("[name='query']").value = query;
+  document.querySelector("[name='direction']").value = direction;
+  document.querySelector("[name='sort']").value = sort;
+
+  const response = await fetch(url);
+  const { albums, pages } = await response.json();
+
+  const albumsDiv = document.getElementById("albums");
+  albums.forEach((album) => {
+    const { title, name, photo } = album;
+    const { targetDiv, anchor, image } = createElements([
+      { name: "targetDiv", type: "div" },
+      { name: "anchor", type: "a" },
+      { name: "image", type: "img" },
+    ]);
+
+    const paragraphs = Object.keys(album)
+      .filter((info) => ["release_year", "stock", "price"].includes(info))
+      .map((info) => {
+        const text = info.split("_").join(" ");
+        const paragraph = document.createElement("p");
+        paragraph.classList.add("album-p");
+        paragraph.innerText = `${text}: ${album[info]}`;
+        return paragraph;
+      });
+
+    targetDiv.classList.add("albums-div");
+    const albumUri = `/artist/${toUrlCase(name)}/album/${toUrlCase(title)}`;
+    anchor.setAttribute("href", albumUri);
+    anchor.innerText = `${name} - ${title}`;
+    image.src = `/common/${photo}`;
+    image.classList.add("albums-img");
+
+    [image, anchor, ...paragraphs].forEach((item) => {
+      targetDiv.appendChild(item);
+    });
+
+    albumsDiv.appendChild(targetDiv);
+  });
+
+  const pageDiv = document.getElementById("pages");
+  [...Array(pages).keys()].forEach((dbPage) => {
+    const htmlRef = dbPage + 1;
+    const pageUrl = `albums?page=${htmlRef}&sort=${sort}&direction=${direction}${searchParam}`;
+    const anchor = document.createElement("a");
+    anchor.setAttribute("href", pageUrl);
+    anchor.innerHTML = htmlRef;
+    pageDiv.appendChild(anchor);
+    if (htmlRef !== pages) {
+      pageDiv.append(",");
     }
-    return { user: jwtPayload["sub"], token: loginToken };
-  } catch (error) {
-    return { user: null, token: null };
-  }
+  });
 };
 
 const renderAlbum = async (uri, token) => {
@@ -78,6 +152,8 @@ const renderAlbum = async (uri, token) => {
 
   const response = await fetch(url);
   const { album, songs } = await response.json();
+
+  document.title += ` ${album.name} - ${album.title}`;
 
   const { image, salesBtn, artistA, table, hr } = createElements([
     { name: "salesBtn", type: "button" },
@@ -100,7 +176,7 @@ const renderAlbum = async (uri, token) => {
       paragraph.classList.add("album-p");
       if (info === "name") {
         paragraph.innerText = `${text}: `;
-        artistA.setAttribute("href", `/artist/${album[info]}`);
+        artistA.setAttribute("href", `/artist/${toUrlCase(album[info])}`);
         artistA.innerText = album[info];
         paragraph.appendChild(artistA);
       } else {
@@ -154,110 +230,6 @@ const renderAlbum = async (uri, token) => {
   }
 };
 
-const buyAlbum = (token) => {
-  alert(token);
-};
-
-const submitQuery = (event) => {
-  event.preventDefault();
-  const {
-    location: { search },
-  } = window;
-  const {
-    target: {
-      sort: { value: sort },
-      query: { value: query },
-      direction: { value: direction },
-    },
-  } = event;
-
-  const url = new URLSearchParams(search);
-  url.set("sort", sort);
-  url.set("direction", direction);
-
-  if (query.length > 0 && url.get("query") !== query) {
-    url.set("query", query);
-    url.set("page", "1");
-  } else if (query.length === 0 && url.get("query") !== null) {
-    url.delete("query");
-  }
-
-  window.location.search = url;
-};
-
-const createElements = (tags) => {
-  const tagsObj = {};
-  tags.forEach((tag) => {
-    const { name, type } = tag;
-    tagsObj[name] = document.createElement(type);
-  });
-  return tagsObj;
-};
-
-const renderAlbums = async (page, sort, direction, query) => {
-  const searchParam = query === null ? "" : `&query=${query}`;
-  const url = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
-
-  document.querySelector("[name='query']").value = query;
-  document.querySelector("[name='direction']").value = direction;
-  document.querySelector("[name='sort']").value = sort;
-
-  const response = await fetch(url);
-  const { albums, pages } = await response.json();
-
-  const albumsDiv = document.getElementById("albums");
-  albums.forEach((album) => {
-    const { title, name, photo } = album;
-    const { targetDiv, anchor, image } = createElements([
-      { name: "targetDiv", type: "div" },
-      { name: "anchor", type: "a" },
-      { name: "image", type: "img" },
-    ]);
-
-    const paragraphs = Object.keys(album)
-      .filter((info) => ["release_year", "stock", "price"].includes(info))
-      .map((info) => {
-        const text = info.split("_").join(" ");
-        const paragraph = document.createElement("p");
-        paragraph.classList.add("album-p");
-        paragraph.innerText = `${text}: ${album[info]}`;
-        return paragraph;
-      });
-
-    targetDiv.classList.add("albums-div");
-    const albumUri = `/artist/${name
-      .toLowerCase()
-      .replace(" ", "-")}/album/${title.toLowerCase().replace(" ", "-")}`;
-    anchor.setAttribute("href", albumUri);
-    anchor.innerText = `${name} - ${title}`;
-    image.src = `/common/${photo}`;
-    image.classList.add("albums-img");
-
-    [image, anchor, ...paragraphs].forEach((item) => {
-      targetDiv.appendChild(item);
-    });
-
-    albumsDiv.appendChild(targetDiv);
-  });
-
-  const pageDiv = document.getElementById("pages");
-  [...Array(pages).keys()].forEach((dbPage) => {
-    const htmlRef = dbPage + 1;
-    const pageUrl = `albums?page=${htmlRef}&sort=${sort}&direction=${direction}${searchParam}`;
-    const anchor = document.createElement("a");
-    anchor.setAttribute("href", pageUrl);
-    anchor.innerHTML = htmlRef;
-    pageDiv.appendChild(anchor);
-    if (htmlRef !== pages) {
-      pageDiv.append(",");
-    }
-  });
-};
-
-const logOut = () => {
-  document.cookie = "token=; Max-Age=0; path=/; domain=" + location.host;
-};
-
 const renderAuthForm = (uri) => {
   let h1text = "";
   switch (uri) {
@@ -299,6 +271,60 @@ const renderUser = async (username, token) => {
 
     targetDiv.appendChild(pElement);
   });
+};
+
+//misc functions
+
+const toUrlCase = (value) => {
+  return value.toLowerCase().replace(/\s/g, "-");
+};
+
+const buyAlbum = (token) => {
+  alert(token);
+};
+
+const checkToken = () => {
+  try {
+    const loginToken = document.cookie.match(/token=(.*$)/)[1];
+    const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
+    if (jwtPayload["iat"] > Number(new Date())) {
+      throw new Error("expired token");
+    }
+    return { user: jwtPayload["sub"], token: loginToken };
+  } catch (error) {
+    return { user: null, token: null };
+  }
+};
+
+const submitQuery = (event) => {
+  event.preventDefault();
+  const {
+    location: { search },
+  } = window;
+  const {
+    target: {
+      sort: { value: sort },
+      query: { value: query },
+      direction: { value: direction },
+    },
+  } = event;
+
+  const url = new URLSearchParams(search);
+  url.set("sort", sort);
+  url.set("direction", direction);
+
+  if (query.length > 0 && url.get("query") !== query) {
+    url.set("query", query);
+    url.set("page", "1");
+  } else if (query.length === 0 && url.get("query") !== null) {
+    url.delete("query");
+  }
+
+  window.location.search = url;
+};
+
+const logOut = () => {
+  document.cookie = "token=; Max-Age=0; path=/; domain=" + location.host;
 };
 
 const auth = async (event) => {
