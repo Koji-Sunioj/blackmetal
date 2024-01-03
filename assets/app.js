@@ -80,7 +80,15 @@ const createElements = (tags) => {
 const renderArtist = async (uri) => {
   const artist = uri.split("/")[2];
   const url = `/api/artist/${artist}`;
-  await fetch(url);
+  const response = await fetch(url);
+  const {
+    artist: { name, albums },
+  } = await response.json();
+
+  const h1 = document.querySelector("h1");
+  h1.innerText = name;
+
+  renderAlbumTiles(albums);
 };
 
 const renderAlbums = async (page, sort, direction, query) => {
@@ -94,38 +102,7 @@ const renderAlbums = async (page, sort, direction, query) => {
   const response = await fetch(url);
   const { albums, pages } = await response.json();
 
-  const albumsDiv = document.getElementById("albums");
-  albums.forEach((album) => {
-    const { title, name, photo } = album;
-    const { targetDiv, anchor, image } = createElements([
-      { name: "targetDiv", type: "div" },
-      { name: "anchor", type: "a" },
-      { name: "image", type: "img" },
-    ]);
-
-    const paragraphs = Object.keys(album)
-      .filter((info) => ["release_year", "stock", "price"].includes(info))
-      .map((info) => {
-        const text = info.split("_").join(" ");
-        const paragraph = document.createElement("p");
-        paragraph.classList.add("album-p");
-        paragraph.innerText = `${text}: ${album[info]}`;
-        return paragraph;
-      });
-
-    targetDiv.classList.add("albums-div");
-    const albumUri = `/artist/${toUrlCase(name)}/album/${toUrlCase(title)}`;
-    anchor.setAttribute("href", albumUri);
-    anchor.innerText = `${name} - ${title}`;
-    image.src = `/common/${photo}`;
-    image.classList.add("albums-img");
-
-    [image, anchor, ...paragraphs].forEach((item) => {
-      targetDiv.appendChild(item);
-    });
-
-    albumsDiv.appendChild(targetDiv);
-  });
+  renderAlbumTiles(albums);
 
   const pageDiv = document.getElementById("pages");
   [...Array(pages).keys()].forEach((dbPage) => {
@@ -155,18 +132,17 @@ const renderAlbum = async (uri, token) => {
 
   document.title += ` ${album.name} - ${album.title}`;
 
-  const { image, salesBtn, artistA, table, hr } = createElements([
+  const { salesBtn, artistA } = createElements([
     { name: "salesBtn", type: "button" },
     { name: "artistA", type: "a" },
-    { name: "image", type: "img" },
-    { name: "hr", type: "hr" },
-    { name: "table", type: "table" },
   ]);
+
+  const image = document.getElementById("album-img");
 
   image.src = `/common/${album.photo}`;
   image.classList.add("album-img");
-  const imgDiv = document.getElementById("img-div");
-  imgDiv.appendChild(image);
+
+  const infoDiv = document.getElementById("info-div");
 
   const paragraphs = Object.keys(album)
     .filter((info) => info !== "photo")
@@ -184,6 +160,12 @@ const renderAlbum = async (uri, token) => {
       }
       return paragraph;
     });
+
+  paragraphs.reverse().forEach((item) => {
+    infoDiv.prepend(item);
+  });
+
+  const table = document.getElementById("songs-table");
 
   songs.forEach((dbSong) => {
     const row = document.createElement("tr");
@@ -212,14 +194,6 @@ const renderAlbum = async (uri, token) => {
 
     table.appendChild(row);
   });
-
-  const infoDiv = document.getElementById("info-div");
-  paragraphs.forEach((item) => {
-    infoDiv.appendChild(item);
-  });
-
-  infoDiv.appendChild(hr);
-  infoDiv.appendChild(table);
 
   if (token !== null && album.stock > 0) {
     salesBtn.innerText = "Buy album";
@@ -274,6 +248,41 @@ const renderUser = async (username, token) => {
 };
 
 //misc functions
+
+const renderAlbumTiles = (albums) => {
+  const albumsDiv = document.getElementById("albums");
+  albums.forEach((album) => {
+    const { title, name, photo } = album;
+    const { targetDiv, anchor, image } = createElements([
+      { name: "targetDiv", type: "div" },
+      { name: "anchor", type: "a" },
+      { name: "image", type: "img" },
+    ]);
+
+    const paragraphs = Object.keys(album)
+      .filter((info) => ["release_year", "stock", "price"].includes(info))
+      .map((info) => {
+        const text = info.split("_").join(" ");
+        const paragraph = document.createElement("p");
+        paragraph.classList.add("album-p");
+        paragraph.innerText = `${text}: ${album[info]}`;
+        return paragraph;
+      });
+
+    targetDiv.classList.add("albums-div");
+    const albumUri = `/artist/${toUrlCase(name)}/album/${toUrlCase(title)}`;
+    anchor.setAttribute("href", albumUri);
+    anchor.innerText = `${name} - ${title}`;
+    image.src = `/common/${photo}`;
+    image.classList.add("albums-img");
+
+    [image, anchor, ...paragraphs].forEach((item) => {
+      targetDiv.appendChild(item);
+    });
+
+    albumsDiv.appendChild(targetDiv);
+  });
+};
 
 const toUrlCase = (value) => {
   return value.toLowerCase().replace(/\s/g, "-");
