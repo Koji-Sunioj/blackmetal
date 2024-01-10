@@ -82,11 +82,13 @@ const renderArtist = async (uri) => {
   const url = `/api/artist/${artist}`;
   const response = await fetch(url);
   const {
-    artist: { name, albums },
+    artist: { name, albums, bio },
   } = await response.json();
 
   const h1 = document.querySelector("h1");
   h1.innerText = name;
+  const artistP = document.getElementById("bio");
+  artistP.innerText = bio;
 
   renderAlbumTiles(albums);
 };
