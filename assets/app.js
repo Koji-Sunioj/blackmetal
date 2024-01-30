@@ -197,7 +197,7 @@ const renderAlbum = async (uri, token) => {
     table.appendChild(row);
   });
 
-  if (token !== null && album.stock > 0) {
+  if (token !== null) {
     salesBtn.innerText = "Buy album";
     salesBtn.onclick = () => {
       buyAlbum(token, album.album_id);
@@ -297,7 +297,11 @@ const buyAlbum = async (token, album_id) => {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  console.log(response.status);
+  switch (response.status) {
+    case 200:
+      window.location.reload();
+      break;
+  }
 };
 
 const checkToken = () => {
