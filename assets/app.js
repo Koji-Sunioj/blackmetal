@@ -200,7 +200,7 @@ const renderAlbum = async (uri, token) => {
   if (token !== null && album.stock > 0) {
     salesBtn.innerText = "Buy album";
     salesBtn.onclick = () => {
-      buyAlbum(token);
+      buyAlbum(token, album.album_id);
     };
     infoDiv.appendChild(salesBtn);
   }
@@ -290,8 +290,14 @@ const toUrlCase = (value) => {
   return value.toLowerCase().replace(/\s/g, "-");
 };
 
-const buyAlbum = (token) => {
-  alert(token);
+const buyAlbum = async (token, album_id) => {
+  const url = `/api/cart/${album_id}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  console.log(response.status);
 };
 
 const checkToken = () => {
