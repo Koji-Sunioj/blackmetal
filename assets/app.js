@@ -15,7 +15,7 @@ const checkSession = async () => {
     refinedURI += uri;
   }
 
-  const { user, token } = checkToken();
+  const { user, token } = await checkToken();
 
   switch (refinedURI) {
     case "/register":
@@ -45,7 +45,6 @@ const checkSession = async () => {
       break;
     case "/artist":
       renderArtist(uri);
-
       break;
     case "/artist-album":
       renderAlbum(uri, token);
@@ -54,27 +53,6 @@ const checkSession = async () => {
       renderUser(user, token);
       break;
   }
-
-  const navBar = document.getElementById("nav");
-  const anchor = document.createElement("a");
-
-  if (user !== null && token !== null) {
-    anchor.setAttribute("href", "/my-account");
-    anchor.innerText = "My account";
-  } else {
-    anchor.setAttribute("href", "/sign-in");
-    anchor.innerText = "Sign in";
-  }
-  navBar.appendChild(anchor);
-};
-
-const createElements = (tags) => {
-  const tagsObj = {};
-  tags.forEach((tag) => {
-    const { name, type } = tag;
-    tagsObj[name] = document.createElement(type);
-  });
-  return tagsObj;
 };
 
 const renderArtist = async (uri) => {
@@ -152,14 +130,26 @@ const renderAlbum = async (uri, token) => {
       const text = info.split("_").join(" ");
       const paragraph = document.createElement("p");
       paragraph.classList.add("album-p");
-      if (info === "name") {
-        paragraph.innerText = `${text}: `;
-        artistA.setAttribute("href", `/artist/${toUrlCase(album[info])}`);
-        artistA.innerText = album[info];
-        paragraph.appendChild(artistA);
-      } else {
-        paragraph.innerText = `${text}: ${album[info]}`;
+
+      switch (info) {
+        case "name":
+          paragraph.innerText = `${text}: `;
+          artistA.setAttribute("href", `/artist/${toUrlCase(album[info])}`);
+          artistA.innerText = album[info];
+          paragraph.appendChild(artistA);
+          break;
+        case "stock":
+          const span = document.createElement("span");
+          span.innerText = album[info];
+          span.id = "stock-p";
+          paragraph.innerText = `${text}: `;
+          paragraph.appendChild(span);
+          break;
+        default:
+          paragraph.innerText = `${text}: ${album[info]}`;
+          break;
       }
+
       return paragraph;
     });
 
@@ -197,8 +187,9 @@ const renderAlbum = async (uri, token) => {
     table.appendChild(row);
   });
 
-  if (token !== null) {
+  if (token !== null && album.stock > 0) {
     salesBtn.innerText = "Buy album";
+    salesBtn.id = "buy-album";
     salesBtn.onclick = () => {
       buyAlbum(token, album.album_id);
     };
@@ -251,6 +242,17 @@ const renderUser = async (username, token) => {
 
 //misc functions
 
+const checkCart = async (token) => {};
+
+const createElements = (tags) => {
+  const tagsObj = {};
+  tags.forEach((tag) => {
+    const { name, type } = tag;
+    tagsObj[name] = document.createElement(type);
+  });
+  return tagsObj;
+};
+
 const renderAlbumTiles = (albums) => {
   const albumsDiv = document.getElementById("albums");
   albums.forEach((album) => {
@@ -291,28 +293,76 @@ const toUrlCase = (value) => {
 };
 
 const buyAlbum = async (token, album_id) => {
+  const salesBtn = document.getElementById("buy-album");
+  salesBtn.disabled = true;
+
   const url = `/api/cart/${album_id}`;
+
   const response = await fetch(url, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
+  }).then((response) => {
+    return response.status;
   });
 
-  switch (response.status) {
+  switch (response) {
     case 200:
-      window.location.reload();
+      const stockP = document.getElementById("stock-p");
+      const newStock = Number(stockP.innerHTML) - 1;
+      stockP.innerText = String(newStock);
+
+      if (newStock === 0) {
+        salesBtn.remove();
+      } else {
+        salesBtn.disabled = false;
+      }
+
+      alert("this album has been added to your cart");
       break;
   }
 };
 
-const checkToken = () => {
+const checkToken = async () => {
+  const navBar = document.getElementById("nav");
+  const anchor = document.createElement("a");
+
   try {
     const loginToken = document.cookie.match(/token=(.*$)/)[1];
     const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
+
+    jwtPayload["iat"] > Number(new Date());
+
     if (jwtPayload["iat"] > Number(new Date())) {
       throw new Error("expired token");
     }
-    return { user: jwtPayload["sub"], token: loginToken };
+
+    if (jwtPayload["sub"] !== null) {
+      anchor.setAttribute("href", "/my-account");
+      anchor.innerText = "My account";
+      navBar.appendChild(anchor);
+    } else {
+      throw new Error("empty credentials");
+    }
+
+    const url = "/api/check-token";
+    const { status } = await fetch(url, {
+      method: "POST",
+      body: loginToken,
+    });
+
+    switch (status) {
+      case 200:
+        return { user: jwtPayload["sub"], token: loginToken };
+      default:
+        anchor.setAttribute("href", "/sign-in");
+        anchor.innerText = "Sign in";
+        document.cookie = "token=; Max-Age=0; path=/; domain=" + location.host;
+        return { user: null, token: null };
+    }
   } catch (error) {
+    anchor.setAttribute("href", "/sign-in");
+    anchor.innerText = "Sign in";
+    navBar.appendChild(anchor);
     return { user: null, token: null };
   }
 };
