@@ -5,24 +5,16 @@ const checkSession = async () => {
     location: { pathname: uri },
   } = window;
 
-  let refinedURI = "";
-
-  if (uri.includes("artist")) {
-    refinedURI += uri.includes("album")
-      ? uri.replace(/(?<=\/artist)\/.+\/.+/, "-album")
-      : uri.replace(/(?<=\/artist)\/.[^\/]*$/, "");
-  } else {
-    refinedURI += uri;
-  }
+  const [, basePath, secondPath] = uri.split("/");
 
   const { user, token } = await checkToken();
 
-  switch (refinedURI) {
-    case "/register":
-    case "/sign-in":
+  switch (basePath) {
+    case "register":
+    case "sign-in":
       renderAuthForm(uri);
       break;
-    case "/albums":
+    case "albums":
       const {
         location: { search },
       } = window;
@@ -43,16 +35,26 @@ const checkSession = async () => {
         renderAlbums(page, sort, direction, query);
       }
       break;
-    case "/artist":
-      renderArtist(uri);
+    case "artist":
+      const pattern = /^\/artist\/.+\/album\/.+$/;
+      const hasAlbum = pattern.test(uri);
+      hasAlbum ? renderAlbum(uri, token) : renderArtist(uri);
       break;
-    case "/artist-album":
-      renderAlbum(uri, token);
-      break;
-    case "/my-account":
-      renderUser(user, token);
+    case "my-account":
+      secondPath === "orders"
+        ? renderOrders(user, token)
+        : renderUser(user, token);
       break;
   }
+};
+
+const renderOrders = async (user, token) => {
+  const url = `/api/orders/${user}`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const { orders, cart } = await response.json();
+  console.log(orders);
 };
 
 const renderArtist = async (uri) => {
@@ -226,23 +228,50 @@ const renderUser = async (username, token) => {
   });
   const { user } = await request.json();
   const targetDiv = document.getElementById("details");
-  Object.keys(user).forEach((param) => {
-    const pElement = document.createElement("p");
-    if (param.includes("created")) {
-      pElement.innerText = `${param}: ${user[param].substring(0, 10)} ${user[
-        param
-      ].substring(11, 16)}`;
-    } else {
-      pElement.innerText = `${param}: ${user[param]}`;
-    }
 
-    targetDiv.appendChild(pElement);
-  });
+  Object.keys(user)
+    .filter((detail) => detail !== "orders" && detail !== "cart")
+    .forEach((param) => {
+      const pElement = document.createElement("p");
+      if (param.includes("created")) {
+        pElement.innerText = `${param}: ${user[param].substring(0, 10)} ${user[
+          param
+        ].substring(11, 16)}`;
+      } else {
+        pElement.innerText = `${param}: ${user[param]}`;
+      }
+
+      targetDiv.appendChild(pElement);
+    });
+
+  const { orders, cart } = user;
+
+  if (orders > 0 || cart > 0) {
+    const existingHref = document.getElementById("log-out");
+    const { newHref, newLine } = createElements([
+      { name: "newHref", type: "a" },
+      { name: "newLine", type: "br" },
+    ]);
+
+    const ordersString =
+      orders > 0
+        ? cart > 0
+          ? `${orders} dispatched,`
+          : `${orders} dispatched`
+        : "";
+    const cartString = cart > 0 ? `${cart} in cart` : "";
+
+    newHref.setAttribute("href", "/my-account/orders");
+    newHref.innerText = `Your orders: ${ordersString} ${cartString}`;
+    newHref.style.paddingTop = "10px";
+    newHref.style.display = "inline-block";
+
+    existingHref.insertAdjacentElement("afterend", newHref);
+    existingHref.insertAdjacentElement("afterend", newLine);
+  }
 };
 
 //misc functions
-
-const checkCart = async (token) => {};
 
 const createElements = (tags) => {
   const tagsObj = {};
@@ -340,29 +369,15 @@ const checkToken = async () => {
       anchor.setAttribute("href", "/my-account");
       anchor.innerText = "My account";
       navBar.appendChild(anchor);
+      return { user: jwtPayload["sub"], token: loginToken };
     } else {
       throw new Error("empty credentials");
-    }
-
-    const url = "/api/check-token";
-    const { status } = await fetch(url, {
-      method: "POST",
-      body: loginToken,
-    });
-
-    switch (status) {
-      case 200:
-        return { user: jwtPayload["sub"], token: loginToken };
-      default:
-        anchor.setAttribute("href", "/sign-in");
-        anchor.innerText = "Sign in";
-        document.cookie = "token=; Max-Age=0; path=/; domain=" + location.host;
-        return { user: null, token: null };
     }
   } catch (error) {
     anchor.setAttribute("href", "/sign-in");
     anchor.innerText = "Sign in";
     navBar.appendChild(anchor);
+    logOut();
     return { user: null, token: null };
   }
 };
