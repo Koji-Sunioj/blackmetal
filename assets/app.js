@@ -54,7 +54,82 @@ const renderOrders = async (user, token) => {
     headers: { Authorization: `Bearer ${token}` },
   });
   const { orders, cart } = await response.json();
-  console.log(orders);
+
+  const targetDiv = document.getElementById("details");
+
+  if (cart.length > 0) {
+    const cartHeader = document.createElement("h2");
+    cartHeader.innerText = "Cart";
+    targetDiv.appendChild(cartHeader);
+    /*  orders.forEach((cart) => {
+      
+      
+    }) */
+  }
+
+  if (cart.length > 0 && orders.length > 0) {
+    const lineBr = document.createElement("hr");
+    targetDiv.appendChild(lineBr);
+  }
+
+  if (orders.length > 0) {
+    const orderHeader = document.createElement("h2");
+    orderHeader.innerText = "Dispatched orders";
+    targetDiv.appendChild(orderHeader);
+    orders.forEach((order) => {
+      Object.keys(order).forEach((key) => {
+        if (key !== "albums") {
+          const paragraph = document.createElement("p");
+          paragraph.innerText = `${key.split("_").join(" ")}: ${
+            key === "dispatched"
+              ? new Date(order[key]).toLocaleString()
+              : order[key]
+          }`;
+          targetDiv.appendChild(paragraph);
+        }
+      });
+
+      const { table, tableHeaderRow } = createElements([
+        { name: "table", type: "table" },
+        { name: "tableHeaderRow", type: "tr" },
+      ]);
+
+      table.classList.add("dispatched-table");
+
+      ["cover", "artist", "title", "quantity", "price"].forEach((header) => {
+        const td = document.createElement("td");
+        td.innerText = header;
+        tableHeaderRow.appendChild(td);
+      });
+
+      table.appendChild(tableHeaderRow);
+      const { albums } = order;
+      albums.forEach((album) => {
+        const row = document.createElement("tr");
+        Object.keys(album).forEach((key) => {
+          const td = document.createElement("td");
+          switch (key) {
+            /* case "artist":
+            case "title": */
+            case "photo":
+              const image = document.createElement("img");
+              image.src = `/common/${album[key]}`;
+              image.classList.add("table-img");
+              td.appendChild(image);
+              break;
+
+            default:
+              td.innerText = album[key];
+          }
+
+          row.appendChild(td);
+        });
+        table.appendChild(row);
+      });
+
+      targetDiv.appendChild(table);
+    });
+  }
 };
 
 const renderArtist = async (uri) => {

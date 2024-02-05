@@ -63,9 +63,16 @@ select {
   width: 100%;
 }
 
-table td,
-table td * {
-  vertical-align: top;
+.table-img {
+  width: 10vw;
+  display: block;
+}
+
+.dispatched-table > tr > td {
+  border: 1px solid;
+  vertical-align: middle;
+  text-align: center;
+  padding: 10px;
 }
 
 .album-p {
