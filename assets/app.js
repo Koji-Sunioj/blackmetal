@@ -58,78 +58,115 @@ const renderOrders = async (user, token) => {
   const targetDiv = document.getElementById("details");
 
   if (cart.length > 0) {
-    const cartHeader = document.createElement("h2");
+    const cartHeader = element("h2");
     cartHeader.innerText = "Cart";
     targetDiv.appendChild(cartHeader);
-    /*  orders.forEach((cart) => {
-      
-      
-    }) */
+
+    cart.forEach((cartItem) => {
+      Object.keys(cartItem)
+        .filter((item) => item === "balance")
+        .forEach((key) => {
+          console.log(key);
+          const paragraph = element("p");
+          paragraph.innerText = `${key}: ${cartItem[key]}`;
+          targetDiv.appendChild(paragraph);
+        });
+
+      const { albums } = cartItem;
+      const table = renderAlbumTable(albums);
+      targetDiv.appendChild(table);
+    });
   }
 
   if (cart.length > 0 && orders.length > 0) {
-    const lineBr = document.createElement("hr");
+    const lineBr = element("hr");
     targetDiv.appendChild(lineBr);
   }
 
   if (orders.length > 0) {
-    const orderHeader = document.createElement("h2");
+    const orderHeader = element("h2");
     orderHeader.innerText = "Dispatched orders";
     targetDiv.appendChild(orderHeader);
+
     orders.forEach((order) => {
-      Object.keys(order).forEach((key) => {
+      Object.keys(order)
+        .filter((item) => ["order id", "dispatched", "balance"].includes(item))
+        .forEach((key) => {
+          const paragraph = element("p");
+          paragraph.innerText = `${key}: ${
+            key === "dispatched" && order[key] !== null
+              ? new Date(order[key]).toLocaleString()
+              : order[key]
+          }`;
+          targetDiv.appendChild(paragraph);
+        });
+
+      /* Object.keys(order).forEach((key) => {
         if (key !== "albums") {
-          const paragraph = document.createElement("p");
-          paragraph.innerText = `${key.split("_").join(" ")}: ${
-            key === "dispatched"
+          const paragraph = element("p");
+          paragraph.innerText = `${key}: ${
+            key === "dispatched" && order[key] !== null
               ? new Date(order[key]).toLocaleString()
               : order[key]
           }`;
           targetDiv.appendChild(paragraph);
         }
-      });
+      }); */
 
-      const { table, tableHeaderRow } = createElements([
-        { name: "table", type: "table" },
-        { name: "tableHeaderRow", type: "tr" },
-      ]);
-
-      table.classList.add("dispatched-table");
-
-      ["cover", "artist", "title", "quantity", "price"].forEach((header) => {
-        const td = document.createElement("td");
-        td.innerText = header;
-        tableHeaderRow.appendChild(td);
-      });
-
-      table.appendChild(tableHeaderRow);
       const { albums } = order;
-      albums.forEach((album) => {
-        const row = document.createElement("tr");
-        Object.keys(album).forEach((key) => {
-          const td = document.createElement("td");
-          switch (key) {
-            /* case "artist":
-            case "title": */
-            case "photo":
-              const image = document.createElement("img");
-              image.src = `/common/${album[key]}`;
-              image.classList.add("table-img");
-              td.appendChild(image);
-              break;
-
-            default:
-              td.innerText = album[key];
-          }
-
-          row.appendChild(td);
-        });
-        table.appendChild(row);
-      });
-
+      const table = renderAlbumTable(albums);
       targetDiv.appendChild(table);
     });
   }
+};
+
+const renderAlbumTable = (albums) => {
+  const [table, tableHeaderRow] = elements(["table", "tr"]);
+
+  table.classList.add("dispatched-table");
+
+  ["cover", "artist", "title", "quantity", "price"].forEach((header) => {
+    const td = element("td");
+    td.innerText = header;
+    tableHeaderRow.appendChild(td);
+  });
+
+  table.appendChild(tableHeaderRow);
+
+  albums.forEach((album) => {
+    const row = element("tr");
+
+    Object.keys(album).forEach((key) => {
+      const td = element("td");
+      switch (key) {
+        case "artist":
+        case "title":
+          const tdA = element("a");
+          const albumUri =
+            key === "artist"
+              ? `/artist/${toUrlCase(album[key])}/album/${toUrlCase(
+                  album["title"]
+                )}`
+              : `/artist/${toUrlCase(album["artist"])}`;
+          tdA.setAttribute("href", albumUri);
+          tdA.innerText = album[key];
+          td.appendChild(tdA);
+          break;
+        case "photo":
+          const image = element("img");
+          image.src = `/common/${album[key]}`;
+          image.classList.add("table-img");
+          td.appendChild(image);
+          break;
+        default:
+          td.innerText = album[key];
+      }
+      row.appendChild(td);
+    });
+    table.appendChild(row);
+  });
+
+  return table;
 };
 
 const renderArtist = async (uri) => {
@@ -165,7 +202,7 @@ const renderAlbums = async (page, sort, direction, query) => {
   [...Array(pages).keys()].forEach((dbPage) => {
     const htmlRef = dbPage + 1;
     const pageUrl = `albums?page=${htmlRef}&sort=${sort}&direction=${direction}${searchParam}`;
-    const anchor = document.createElement("a");
+    const anchor = element("a");
     anchor.setAttribute("href", pageUrl);
     anchor.innerHTML = htmlRef;
     pageDiv.appendChild(anchor);
@@ -184,15 +221,19 @@ const renderAlbum = async (uri, token) => {
 
   const url = `/api/albums/${artist_name}/${album_title}`;
 
-  const response = await fetch(url);
+  const params =
+    token !== null
+      ? {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      : {};
+
+  const response = await fetch(url, params);
   const { album, songs } = await response.json();
 
   document.title += ` ${album.name} - ${album.title}`;
 
-  const { salesBtn, artistA } = createElements([
-    { name: "salesBtn", type: "button" },
-    { name: "artistA", type: "a" },
-  ]);
+  const [salesBtn, artistA] = elements(["button", "a"]);
 
   const image = document.getElementById("album-img");
 
@@ -202,10 +243,10 @@ const renderAlbum = async (uri, token) => {
   const infoDiv = document.getElementById("info-div");
 
   const paragraphs = Object.keys(album)
-    .filter((info) => info !== "photo")
+    .filter((info) => !["photo", "cart"].includes(info))
     .map((info) => {
       const text = info.split("_").join(" ");
-      const paragraph = document.createElement("p");
+      const paragraph = element("p");
       paragraph.classList.add("album-p");
 
       switch (info) {
@@ -216,7 +257,7 @@ const renderAlbum = async (uri, token) => {
           paragraph.appendChild(artistA);
           break;
         case "stock":
-          const span = document.createElement("span");
+          const span = element("span");
           span.innerText = album[info];
           span.id = "stock-p";
           paragraph.innerText = `${text}: `;
@@ -237,7 +278,7 @@ const renderAlbum = async (uri, token) => {
   const table = document.getElementById("songs-table");
 
   songs.forEach((dbSong) => {
-    const row = document.createElement("tr");
+    const row = element("tr");
     Object.keys(dbSong).forEach((item) => {
       if (dbSong[item] !== null) {
         let text = "";
@@ -255,7 +296,7 @@ const renderAlbum = async (uri, token) => {
             text = `${dbSong[item]}`;
             break;
         }
-        const td = document.createElement("td");
+        const td = element("td");
         td.innerText = text;
         row.appendChild(td);
       }
@@ -265,7 +306,7 @@ const renderAlbum = async (uri, token) => {
   });
 
   if (token !== null && album.stock > 0) {
-    salesBtn.innerText = "Buy album";
+    salesBtn.innerText = "Add to cart";
     salesBtn.id = "buy-album";
     salesBtn.onclick = () => {
       buyAlbum(token, album.album_id);
@@ -282,7 +323,7 @@ const renderAuthForm = (uri) => {
       break;
     case "/sign-in":
       h1text = "Sign In";
-      const nodes = ["a", "br"].map((tag) => document.createElement(tag));
+      const nodes = ["a", "br"].map((tag) => element(tag));
       const anchor = nodes.find((node) => node.tagName === "A");
       anchor.setAttribute("href", "/register");
       anchor.innerText = "don't have an account? sign up!";
@@ -307,7 +348,7 @@ const renderUser = async (username, token) => {
   Object.keys(user)
     .filter((detail) => detail !== "orders" && detail !== "cart")
     .forEach((param) => {
-      const pElement = document.createElement("p");
+      const pElement = element("p");
       if (param.includes("created")) {
         pElement.innerText = `${param}: ${user[param].substring(0, 10)} ${user[
           param
@@ -323,10 +364,8 @@ const renderUser = async (username, token) => {
 
   if (orders > 0 || cart > 0) {
     const existingHref = document.getElementById("log-out");
-    const { newHref, newLine } = createElements([
-      { name: "newHref", type: "a" },
-      { name: "newLine", type: "br" },
-    ]);
+
+    const [newHref, newLine] = elements(["a", "br"]);
 
     const ordersString =
       orders > 0
@@ -348,6 +387,14 @@ const renderUser = async (username, token) => {
 
 //misc functions
 
+const elements = (params) => {
+  return params.map((param) => document.createElement(param));
+};
+
+const element = (param) => {
+  return document.createElement(param);
+};
+
 const createElements = (tags) => {
   const tagsObj = {};
   tags.forEach((tag) => {
@@ -361,17 +408,13 @@ const renderAlbumTiles = (albums) => {
   const albumsDiv = document.getElementById("albums");
   albums.forEach((album) => {
     const { title, name, photo } = album;
-    const { targetDiv, anchor, image } = createElements([
-      { name: "targetDiv", type: "div" },
-      { name: "anchor", type: "a" },
-      { name: "image", type: "img" },
-    ]);
+    const [targetDiv, anchor, image] = elements(["div", "a", "img"]);
 
     const paragraphs = Object.keys(album)
       .filter((info) => ["release_year", "stock", "price"].includes(info))
       .map((info) => {
         const text = info.split("_").join(" ");
-        const paragraph = document.createElement("p");
+        const paragraph = element("p");
         paragraph.classList.add("album-p");
         paragraph.innerText = `${text}: ${album[info]}`;
         return paragraph;
@@ -428,7 +471,7 @@ const buyAlbum = async (token, album_id) => {
 
 const checkToken = async () => {
   const navBar = document.getElementById("nav");
-  const anchor = document.createElement("a");
+  const anchor = element("a");
 
   try {
     const loginToken = document.cookie.match(/token=(.*$)/)[1];

@@ -68,11 +68,26 @@ select {
   display: block;
 }
 
+.dispatched-table {
+  width: 100%;
+}
+
 .dispatched-table > tr > td {
   border: 1px solid;
   vertical-align: middle;
   text-align: center;
-  padding: 10px;
+}
+
+.dispatched-table > tr > td:nth-child(1) {
+  width: 10%;
+}
+
+.dispatched-table > tr > td:nth-child(2) {
+  width: 30%;
+}
+
+.dispatched-table > tr > td:nth-child(3) {
+  width: 30%;
 }
 
 .album-p {
