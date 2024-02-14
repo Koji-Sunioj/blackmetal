@@ -2,7 +2,7 @@
 
 const checkSession = async () => {
   const {
-    location: { pathname: uri },
+    location: { pathname: uri, search },
   } = window;
 
   const [, basePath, secondPath] = uri.split("/");
@@ -15,9 +15,6 @@ const checkSession = async () => {
       renderAuthForm(uri);
       break;
     case "albums":
-      const {
-        location: { search },
-      } = window;
       const url = new URLSearchParams(search);
       const page = url.get("page"),
         sort = url.get("sort"),
@@ -101,18 +98,6 @@ const renderOrders = async (user, token) => {
           targetDiv.appendChild(paragraph);
         });
 
-      /* Object.keys(order).forEach((key) => {
-        if (key !== "albums") {
-          const paragraph = element("p");
-          paragraph.innerText = `${key}: ${
-            key === "dispatched" && order[key] !== null
-              ? new Date(order[key]).toLocaleString()
-              : order[key]
-          }`;
-          targetDiv.appendChild(paragraph);
-        }
-      }); */
-
       const { albums } = order;
       const table = renderAlbumTable(albums);
       targetDiv.appendChild(table);
@@ -125,7 +110,7 @@ const renderAlbumTable = (albums) => {
 
   table.classList.add("dispatched-table");
 
-  ["cover", "artist", "title", "quantity", "price"].forEach((header) => {
+  ["cover", "title", "artist", "quantity", "price"].forEach((header) => {
     const td = element("td");
     td.innerText = header;
     tableHeaderRow.appendChild(td);
@@ -144,10 +129,10 @@ const renderAlbumTable = (albums) => {
           const tdA = element("a");
           const albumUri =
             key === "artist"
-              ? `/artist/${toUrlCase(album[key])}/album/${toUrlCase(
+              ? `/artist/${toUrlCase(album["artist"])}`
+              : `/artist/${toUrlCase(album["artist"])}/album/${toUrlCase(
                   album["title"]
-                )}`
-              : `/artist/${toUrlCase(album["artist"])}`;
+                )}`;
           tdA.setAttribute("href", albumUri);
           tdA.innerText = album[key];
           td.appendChild(tdA);
@@ -229,7 +214,7 @@ const renderAlbum = async (uri, token) => {
       : {};
 
   const response = await fetch(url, params);
-  const { album, songs } = await response.json();
+  const { album, songs, cart } = await response.json();
 
   document.title += ` ${album.name} - ${album.title}`;
 
@@ -250,6 +235,8 @@ const renderAlbum = async (uri, token) => {
       paragraph.classList.add("album-p");
 
       switch (info) {
+        case "album_id":
+          break;
         case "name":
           paragraph.innerText = `${text}: `;
           artistA.setAttribute("href", `/artist/${toUrlCase(album[info])}`);
@@ -305,13 +292,33 @@ const renderAlbum = async (uri, token) => {
     table.appendChild(row);
   });
 
-  if (token !== null && album.stock > 0) {
+  if (token !== null) {
     salesBtn.innerText = "Add to cart";
+
+    if (album.stock <= 0) {
+      salesBtn.disabled = true;
+      salesBtn.classList.add("disabled-button");
+    }
+
     salesBtn.id = "buy-album";
     salesBtn.onclick = () => {
       buyAlbum(token, album.album_id);
     };
     infoDiv.appendChild(salesBtn);
+
+    if (cart > 0) {
+      
+      const cartInfo = element("i");
+      cartInfo.id = "cart-info"
+      cartInfo.innerText = `${cart} of these albums are in your cart.`;
+      cartInfo.style.display ="block";
+
+      const removeBtn = element("button");
+      removeBtn.innerText = "Remove from cart";
+      removeBtn.id = "remove-button"
+      infoDiv.appendChild(removeBtn);
+      infoDiv.appendChild(cartInfo);
+    }
   }
 };
 
@@ -361,6 +368,8 @@ const renderUser = async (username, token) => {
     });
 
   const { orders, cart } = user;
+
+  console.log(orders, cart);
 
   if (orders > 0 || cart > 0) {
     const existingHref = document.getElementById("log-out");
@@ -448,18 +457,21 @@ const buyAlbum = async (token, album_id) => {
   const response = await fetch(url, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
-  }).then((response) => {
-    return response.status;
   });
 
-  switch (response) {
+  const { status } = response;
+  const { remaining } = await response.json();
+
+
+  switch (status) {
     case 200:
       const stockP = document.getElementById("stock-p");
-      const newStock = Number(stockP.innerHTML) - 1;
-      stockP.innerText = String(newStock);
+      stockP.innerText = String(remaining);
 
-      if (newStock === 0) {
-        salesBtn.remove();
+      if (remaining === 0) {
+        salesBtn.disabled = true;
+        salesBtn.classList.add("disabled-button");
+
       } else {
         salesBtn.disabled = false;
       }

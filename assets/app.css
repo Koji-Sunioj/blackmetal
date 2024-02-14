@@ -123,9 +123,16 @@ button:focus {
   text-shadow: red 2px 2px 5px;
 }
 
+.disabled-button {
+  color: grey;
+  pointer-events: none;
+}
+
 button {
   background-color: black;
   color: white;
+  margin-right:10px;
+  margin-bottom:10px;
 }
 
 i {
