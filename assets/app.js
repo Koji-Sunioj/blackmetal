@@ -293,32 +293,37 @@ const renderAlbum = async (uri, token) => {
   });
 
   if (token !== null) {
+    const [cartInfo, removeBtn] = elements(["i", "button"]);
+
+    cartInfo.id = "cart-info";
+    cartInfo.style.display = "block";
+    salesBtn.id = "buy-album";
     salesBtn.innerText = "Add to cart";
+    removeBtn.id = "remove-button";
+    removeBtn.innerText = "Remove from cart";
+    removeBtn.style.display = "none";
 
     if (album.stock <= 0) {
       salesBtn.disabled = true;
       salesBtn.classList.add("disabled-button");
     }
 
-    salesBtn.id = "buy-album";
     salesBtn.onclick = () => {
       buyAlbum(token, album.album_id);
     };
-    infoDiv.appendChild(salesBtn);
+    
+    removeBtn.onclick = ()=>{
+      removeAlbum(token, album.album_id);
+    }
 
     if (cart > 0) {
-      
-      const cartInfo = element("i");
-      cartInfo.id = "cart-info"
       cartInfo.innerText = `${cart} of these albums are in your cart.`;
-      cartInfo.style.display ="block";
-
-      const removeBtn = element("button");
-      removeBtn.innerText = "Remove from cart";
-      removeBtn.id = "remove-button"
-      infoDiv.appendChild(removeBtn);
-      infoDiv.appendChild(cartInfo);
+      removeBtn.style.display = "inline-block";
     }
+
+    [salesBtn, removeBtn, cartInfo].forEach((element) => {
+      infoDiv.appendChild(element);
+    });
   }
 };
 
@@ -368,8 +373,6 @@ const renderUser = async (username, token) => {
     });
 
   const { orders, cart } = user;
-
-  console.log(orders, cart);
 
   if (orders > 0 || cart > 0) {
     const existingHref = document.getElementById("log-out");
@@ -452,7 +455,7 @@ const buyAlbum = async (token, album_id) => {
   const salesBtn = document.getElementById("buy-album");
   salesBtn.disabled = true;
 
-  const url = `/api/cart/${album_id}`;
+  const url = `/api/cart/${album_id}/add`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -460,18 +463,20 @@ const buyAlbum = async (token, album_id) => {
   });
 
   const { status } = response;
-  const { remaining } = await response.json();
-
+  const { remaining, cart } = await response.json();
 
   switch (status) {
     case 200:
       const stockP = document.getElementById("stock-p");
       stockP.innerText = String(remaining);
+      const removeBtn = document.getElementById("remove-button");
+      removeBtn.classList.remove("disabled-button");
+      const cartInfo = document.getElementById("cart-info");
+      cartInfo.innerText = `${cart} of these albums are in your cart.`;
+      removeBtn.style.display = "inline-block";
 
       if (remaining === 0) {
-        salesBtn.disabled = true;
         salesBtn.classList.add("disabled-button");
-
       } else {
         salesBtn.disabled = false;
       }
@@ -479,6 +484,21 @@ const buyAlbum = async (token, album_id) => {
       alert("this album has been added to your cart");
       break;
   }
+};
+
+const removeAlbum = async (token, album_id) => {
+  const removeBtn = document.getElementById("remove-button");
+  const url = `/api/cart/${album_id}/remove`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const { status } = response;
+  const { remaining, cart } = await response.json();
+
+  console.log(status, remaining, cart);
 };
 
 const checkToken = async () => {
