@@ -55,7 +55,7 @@ const renderOrders = async (user, token) => {
   const targetDiv = document.getElementById("details");
 
   if (cart.length > 0) {
-    const cartHeader = element("h2");
+    const [cartHeader, orderBtn] = elements(["h2", "button"]);
     cartHeader.innerText = "Cart";
     targetDiv.appendChild(cartHeader);
 
@@ -63,7 +63,6 @@ const renderOrders = async (user, token) => {
       Object.keys(cartItem)
         .filter((item) => item === "balance")
         .forEach((key) => {
-          console.log(key);
           const paragraph = element("p");
           paragraph.innerText = `${key}: ${cartItem[key]}`;
           targetDiv.appendChild(paragraph);
@@ -73,6 +72,13 @@ const renderOrders = async (user, token) => {
       const table = renderAlbumTable(albums);
       targetDiv.appendChild(table);
     });
+
+    orderBtn.id = "order-button";
+    orderBtn.innerText = "Checkout order";
+    orderBtn.onclick = () => {
+      checkOut(cart[0].order_id, token);
+    };
+    targetDiv.appendChild(orderBtn);
   }
 
   if (cart.length > 0 && orders.length > 0) {
@@ -87,10 +93,10 @@ const renderOrders = async (user, token) => {
 
     orders.forEach((order) => {
       Object.keys(order)
-        .filter((item) => ["order id", "dispatched", "balance"].includes(item))
+        .filter((item) => ["order_id", "dispatched", "balance"].includes(item))
         .forEach((key) => {
           const paragraph = element("p");
-          paragraph.innerText = `${key}: ${
+          paragraph.innerText = `${key.split("_").join(" ")}: ${
             key === "dispatched" && order[key] !== null
               ? new Date(order[key]).toLocaleString()
               : order[key]
@@ -102,6 +108,23 @@ const renderOrders = async (user, token) => {
       const table = renderAlbumTable(albums);
       targetDiv.appendChild(table);
     });
+  }
+};
+
+const checkOut = async (order_id, token) => {
+  const url = `/api/cart/${order_id}/checkout`;
+
+  const request = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const { status } = request;
+  const { detail } = await request.json();
+
+  if (status === 200) {
+    alert(detail);
+    location.reload();
   }
 };
 
@@ -311,10 +334,10 @@ const renderAlbum = async (uri, token) => {
     salesBtn.onclick = () => {
       buyAlbum(token, album.album_id);
     };
-    
-    removeBtn.onclick = ()=>{
+
+    removeBtn.onclick = () => {
       removeAlbum(token, album.album_id);
-    }
+    };
 
     if (cart > 0) {
       cartInfo.innerText = `${cart} of these albums are in your cart.`;
@@ -470,7 +493,6 @@ const buyAlbum = async (token, album_id) => {
       const stockP = document.getElementById("stock-p");
       stockP.innerText = String(remaining);
       const removeBtn = document.getElementById("remove-button");
-      removeBtn.classList.remove("disabled-button");
       const cartInfo = document.getElementById("cart-info");
       cartInfo.innerText = `${cart} of these albums are in your cart.`;
       removeBtn.style.display = "inline-block";
@@ -488,6 +510,8 @@ const buyAlbum = async (token, album_id) => {
 
 const removeAlbum = async (token, album_id) => {
   const removeBtn = document.getElementById("remove-button");
+  removeBtn.disabled = true;
+
   const url = `/api/cart/${album_id}/remove`;
 
   const response = await fetch(url, {
@@ -498,7 +522,23 @@ const removeAlbum = async (token, album_id) => {
   const { status } = response;
   const { remaining, cart } = await response.json();
 
-  console.log(status, remaining, cart);
+  switch (status) {
+    case 200:
+      const stockP = document.getElementById("stock-p");
+      stockP.innerText = String(remaining);
+      const salesBtn = document.getElementById("buy-album");
+      const cartInfo = document.getElementById("cart-info");
+      cartInfo.innerText =
+        cart <= 0 ? "" : `${cart} of these albums are in your cart.`;
+      salesBtn.classList.remove("disabled-button");
+
+      if (cart === 0) {
+        removeBtn.style.display = "none";
+      }
+
+      removeBtn.disabled = false;
+      alert("this album has been removed from your cart");
+  }
 };
 
 const checkToken = async () => {

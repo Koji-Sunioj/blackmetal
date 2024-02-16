@@ -55,10 +55,6 @@ select {
   flex: 1;
 }
 
-#info-div > button {
-  margin-top: 10px;
-}
-
 .album-img {
   width: 100%;
 }
@@ -70,6 +66,7 @@ select {
 
 .dispatched-table {
   width: 100%;
+  border: 1px solid white;
 }
 
 .dispatched-table > tr > td {
@@ -131,6 +128,7 @@ button:focus {
 button {
   background-color: black;
   color: white;
+  margin-top:10px;
   margin-right:10px;
   margin-bottom:10px;
 }
