@@ -53,35 +53,28 @@ const renderOrders = async (user, token) => {
   const { orders, cart } = await response.json();
 
   const targetDiv = document.getElementById("details");
+  const hasCart = cart.balance !== null && cart.albums !== null
 
-  if (cart.length > 0) {
-    const [cartHeader, orderBtn] = elements(["h2", "button"]);
+  if (hasCart) {
+    const { albums, balance } = cart;
+    const [cartHeader, orderBtn, balanceP] = elements(["h2", "button", "p"]);
     cartHeader.innerText = "Cart";
-    targetDiv.appendChild(cartHeader);
-
-    cart.forEach((cartItem) => {
-      Object.keys(cartItem)
-        .filter((item) => item === "balance")
-        .forEach((key) => {
-          const paragraph = element("p");
-          paragraph.innerText = `${key}: ${cartItem[key]}`;
-          targetDiv.appendChild(paragraph);
-        });
-
-      const { albums } = cartItem;
-      const table = renderAlbumTable(albums);
-      targetDiv.appendChild(table);
-    });
-
+    balanceP.innerText = `balance: ${balance}`;
+    const table = renderAlbumTable(albums);
     orderBtn.id = "order-button";
     orderBtn.innerText = "Checkout order";
     orderBtn.onclick = () => {
-      checkOut(cart[0].order_id, token);
+      checkOut(user, token);
     };
-    targetDiv.appendChild(orderBtn);
+
+    [cartHeader,balanceP,table,orderBtn].forEach((element)=>{
+      targetDiv.appendChild(element)
+    })
   }
 
-  if (cart.length > 0 && orders.length > 0) {
+  
+
+  if (hasCart && orders.length > 0) {
     const lineBr = element("hr");
     targetDiv.appendChild(lineBr);
   }
@@ -103,8 +96,9 @@ const renderOrders = async (user, token) => {
           }`;
           targetDiv.appendChild(paragraph);
         });
-
+     
       const { albums } = order;
+      
       const table = renderAlbumTable(albums);
       targetDiv.appendChild(table);
     });
@@ -399,16 +393,9 @@ const renderUser = async (username, token) => {
 
   if (orders > 0 || cart > 0) {
     const existingHref = document.getElementById("log-out");
-
     const [newHref, newLine] = elements(["a", "br"]);
-
-    const ordersString =
-      orders > 0
-        ? cart > 0
-          ? `${orders} dispatched,`
-          : `${orders} dispatched`
-        : "";
-    const cartString = cart > 0 ? `${cart} in cart` : "";
+    const ordersString = orders > 0 ? `${orders} order(s) dispatched.` : "";
+    const cartString = cart > 0 ? `${cart} albums in cart.` : "";
 
     newHref.setAttribute("href", "/my-account/orders");
     newHref.innerText = `Your orders: ${ordersString} ${cartString}`;
