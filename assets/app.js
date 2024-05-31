@@ -53,7 +53,7 @@ const renderOrders = async (user, token) => {
   const { orders, cart } = await response.json();
 
   const targetDiv = document.getElementById("details");
-  const hasCart = cart.balance !== null && cart.albums !== null
+  const hasCart = cart.balance !== null && cart.albums !== null;
 
   if (hasCart) {
     const { albums, balance } = cart;
@@ -67,12 +67,10 @@ const renderOrders = async (user, token) => {
       checkOut(user, token);
     };
 
-    [cartHeader,balanceP,table,orderBtn].forEach((element)=>{
-      targetDiv.appendChild(element)
-    })
+    [cartHeader, balanceP, table, orderBtn].forEach((element) => {
+      targetDiv.appendChild(element);
+    });
   }
-
-  
 
   if (hasCart && orders.length > 0) {
     const lineBr = element("hr");
@@ -96,9 +94,9 @@ const renderOrders = async (user, token) => {
           }`;
           targetDiv.appendChild(paragraph);
         });
-     
+
       const { albums } = order;
-      
+
       const table = renderAlbumTable(albums);
       targetDiv.appendChild(table);
     });
@@ -529,8 +527,7 @@ const removeAlbum = async (token, album_id) => {
 };
 
 const checkToken = async () => {
-  const navBar = document.getElementById("nav");
-  const anchor = element("a");
+  const accountLink = document.getElementById("account-link");
 
   try {
     const loginToken = document.cookie.match(/token=(.*$)/)[1];
@@ -543,17 +540,14 @@ const checkToken = async () => {
     }
 
     if (jwtPayload["sub"] !== null) {
-      anchor.setAttribute("href", "/my-account");
-      anchor.innerText = "My account";
-      navBar.appendChild(anchor);
+      accountLink.setAttribute("href", "/my-account");
+
       return { user: jwtPayload["sub"], token: loginToken };
     } else {
       throw new Error("empty credentials");
     }
   } catch (error) {
-    anchor.setAttribute("href", "/sign-in");
-    anchor.innerText = "Sign in";
-    navBar.appendChild(anchor);
+    accountLink.setAttribute("href", "/sign-in");
     logOut();
     return { user: null, token: null };
   }
