@@ -16,10 +16,21 @@ button {
 
 /* albums page */
 
+select option, select optgroup {
+  background: black;
+}
+
 #albums {
   display: grid;
   grid-template-columns: auto auto;
 }
+
+@media (max-width: 768px)  {
+  #albums {
+    grid-template-columns: auto;
+  }
+}
+
 
 #search-form {
   display: flex;
@@ -51,6 +62,13 @@ select {
   gap: 30px;
 }
 
+@media (max-width: 768px)  {
+  #album {
+    flex-direction:column;
+  }
+}
+
+
 #album > div {
   flex: 1;
 }
@@ -60,8 +78,12 @@ select {
 }
 
 .table-img {
-  width: 10vw;
+  width: 100%;
   display: block;
+}
+
+.hideable-path {
+  display: none;
 }
 
 .dispatched-table {
@@ -76,15 +98,19 @@ select {
 }
 
 .dispatched-table > tr > td:nth-child(1) {
-  width: 10%;
+  width: 10vw;
 }
 
 .dispatched-table > tr > td:nth-child(2) {
-  width: 30%;
+  width: 40vw;
 }
 
 .dispatched-table > tr > td:nth-child(3) {
-  width: 30%;
+  width: 20vw;
+}
+
+.dispatched-table > tr > td:nth-child(4) {
+  width: 10vw;
 }
 
 .album-p {
@@ -99,6 +125,30 @@ select {
   object-fit: cover;
   height: 50vh;
 }
+
+@media (max-width: 768px)  {
+  .hideable-path {
+    display: block;
+  }
+  
+  .inverse-hideable-path {
+    display: none;
+  }
+
+  .dispatched-table > tr > td:nth-child(2) {
+    width: 60vw;
+  }
+  .dispatched-table > tr > td:nth-child(3) {
+    display: none;
+  }
+  .dispatched-table > tr > td:nth-child(4) {
+    display: none;
+  }
+  .dispatched-table > tr > td:nth-child(5) {
+    display: none;
+  }
+}
+
 
 /* misc */
 

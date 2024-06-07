@@ -142,15 +142,26 @@ const renderAlbumTable = (albums) => {
         case "artist":
         case "title":
           const tdA = element("a");
-          const albumUri =
-            key === "artist"
-              ? `/artist/${toUrlCase(album["artist"])}`
-              : `/artist/${toUrlCase(album["artist"])}/album/${toUrlCase(
-                  album["title"]
-                )}`;
+          let albumUri = "";
+
+          if (key === "artist") {
+            albumUri += `/artist/${toUrlCase(album["artist"])}`;
+          } else if (key === "title") {
+            albumUri += `/artist/${toUrlCase(
+              album["artist"]
+            )}/album/${toUrlCase(album["title"])}`;
+            const hiddenA = element("a");
+            hiddenA.setAttribute("class", "hideable-path");
+            hiddenA.setAttribute("href", albumUri);
+            hiddenA.innerText = `${album["artist"]} - ${album["title"]} = ${album["price"]} x ${album["quantity"]}`;
+            td.appendChild(hiddenA);
+          }
+
           tdA.setAttribute("href", albumUri);
+          tdA.setAttribute("class", "inverse-hideable-path ");
           tdA.innerText = album[key];
           td.appendChild(tdA);
+
           break;
         case "photo":
           const image = element("img");
