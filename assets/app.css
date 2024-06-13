@@ -25,34 +25,77 @@ select option, select optgroup {
   grid-template-columns: auto auto;
 }
 
-@media (max-width: 768px)  {
-  #albums {
-    grid-template-columns: auto;
-  }
-}
 
 
-#search-form {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  width: 80vw;
-}
 
 .query-item > button {
   margin: 8px 0px 16px 0px;
 }
 
+
+
 .albums-img {
   padding-top: 20px;
+  object-fit: cover;
+  height: 50vh;
   padding-bottom: 20px;
   display: block;
 }
 
+#search-form {
+  display: none;
+  display: flex;
+  width: 80vw;
+  flex-direction: row;
+  justify-content: space-between;
+ 
+}
+
 .query-item > input,
 select {
-  width: 10vw;
+  width: 15vw;
+} 
+
+@media (max-width: 768px)  {
+  #albums {
+    grid-template-columns: auto;
+    justify-content: flex-start;
+  }
+  #search-form {
+    width: auto;
+  }
+
+  .query-item > input,
+  select {
+    width: 20vw;
+  } 
+
+  
+
+  .query-item > label {
+    display: none;
+  }
 }
+
+@media (max-width: 576px)  {
+  #albums {
+    justify-content: center;
+  }
+
+  .albums-div {
+    width: 80vw;
+    
+  }
+
+  .albums-img {
+    width: 100%;
+    height: auto;
+  }
+}
+
+
+
+
 
 /* album page */
 
@@ -121,10 +164,7 @@ select {
   text-align: end;
 }
 
-.albums-div > img {
-  object-fit: cover;
-  height: 50vh;
-}
+
 
 @media (max-width: 768px)  {
   .hideable-path {
@@ -132,6 +172,14 @@ select {
   }
   
   .inverse-hideable-path {
+    display: none;
+  }
+
+  .dispatched-table > tr > td:nth-child(1) {
+    width: 20vw;
+  }
+
+  .dispatched-table > tr:nth-child(1) {
     display: none;
   }
 

@@ -5,6 +5,7 @@
     <script src="/assets/app.js"></script>
     <link href="/assets/old-english-five.css" rel="stylesheet" />
     <link href="/assets/app.css" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width" />
   </head>
   <body onload="checkSession()">
     <div id="nav">
@@ -17,7 +18,7 @@
     <form onsubmit="submitQuery(event)" id="search-form">
       <div class="query-item">
         <label for="query">search by:</label>
-        <input type="search" name="query" />
+        <input type="search" name="query" placeholder="album, artist..." />
       </div>
       <div class="query-item">
         <label for="sort">sort by:</label>
