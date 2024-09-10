@@ -25,14 +25,9 @@ select option, select optgroup {
   grid-template-columns: auto auto;
 }
 
-
-
-
 .query-item > button {
   margin: 8px 0px 16px 0px;
 }
-
-
 
 .albums-img {
   padding-top: 20px;
@@ -242,4 +237,8 @@ a {
 
 body {
   background-color: black;
+}
+
+.shop {
+  background-color: rgb(1, 35, 99);
 }

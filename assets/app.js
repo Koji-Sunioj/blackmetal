@@ -544,9 +544,9 @@ const checkToken = async () => {
     const loginToken = document.cookie.match(/token=(.*$)/)[1];
     const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
 
-    jwtPayload["iat"] > Number(new Date());
+    const expirationDate = new Date(jwtPayload["exp"] * 1000);
 
-    if (jwtPayload["iat"] > Number(new Date())) {
+    if (expirationDate < new Date()) {
       throw new Error("expired token");
     }
 
@@ -607,6 +607,7 @@ const auth = async (event) => {
   const {
     location: { pathname: uri },
   } = window;
+
   const url = `/api${uri}`;
 
   const response = await fetch(url, {
