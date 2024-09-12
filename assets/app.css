@@ -88,10 +88,6 @@ select {
   }
 }
 
-
-
-
-
 /* album page */
 
 #album {
@@ -105,7 +101,6 @@ select {
     flex-direction:column;
   }
 }
-
 
 #album > div {
   flex: 1;
@@ -192,7 +187,6 @@ select {
   }
 }
 
-
 /* misc */
 
 input,
@@ -239,6 +233,12 @@ body {
   background-color: black;
 }
 
+/* admin */
+
 .shop {
-  background-color: rgb(1, 35, 99);
+  background-image: url("output-onlinepngtools.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-attachment: fixed;
+  
 }
