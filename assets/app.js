@@ -5,16 +5,14 @@ const checkSession = async () => {
     location: { pathname: uri, search },
   } = window;
 
-  const [, basePath, secondPath] = uri.split("/");
-
   const { user, token } = await checkToken();
 
-  switch (basePath) {
-    case "register":
-    case "sign-in":
+  switch (uri) {
+    case "/register":
+    case "/sign-in":
       renderAuthForm(uri);
       break;
-    case "albums":
+    case "/albums":
       const url = new URLSearchParams(search);
       const page = url.get("page"),
         sort = url.get("sort"),
@@ -32,17 +30,39 @@ const checkSession = async () => {
         renderAlbums(page, sort, direction, query);
       }
       break;
-    case "artist":
-      const pattern = /^\/artist\/.+\/album\/.+$/;
-      const hasAlbum = pattern.test(uri);
-      hasAlbum ? renderAlbum(uri, token) : renderArtist(uri);
+    case "/my-account/":
+      renderUser(user, token);
       break;
-    case "my-account":
-      secondPath === "orders"
-        ? renderOrders(user, token)
-        : renderUser(user, token);
+    case "/my-account/orders":
+      renderOrders(user, token);
+      break;
+    case "/admin/add-album":
+      renderAlbumForm();
       break;
   }
+
+  if (uri.includes("artist")) {
+    switch (true) {
+      case /^\/artist\/[^\/]+$/.test(uri):
+        renderArtist(uri);
+        break;
+      case /^\/artist\/.+\/album\/.+$/.test(uri):
+        renderAlbum(uri, token);
+    }
+  }
+};
+
+const renderAlbumForm = async () => {
+  const response = await fetch("/api/artists");
+  const { artists } = await response.json();
+  const artistSelect = document.querySelector("[name='artists']");
+  artists.forEach((artist) => {
+    const { name } = artist;
+    const newOption = element("option");
+    newOption.innerHTML = name;
+    newOption.value = name;
+    artistSelect.appendChild(newOption);
+  });
 };
 
 const renderOrders = async (user, token) => {
@@ -408,8 +428,7 @@ const renderUser = async (username, token) => {
 
     newHref.setAttribute("href", "/my-account/orders");
     newHref.innerText = `Your orders: ${ordersString} ${cartString}`;
-    newHref.style.paddingTop = "10px";
-    newHref.style.display = "inline-block";
+    newHref.classList.add("action-link");
 
     existingHref.insertAdjacentElement("afterend", newHref);
     existingHref.insertAdjacentElement("afterend", newLine);

@@ -40,7 +40,6 @@ select option, select optgroup {
 #search-form {
   display: none;
   display: flex;
-  width: 80vw;
   flex-direction: row;
   justify-content: space-between;
  
@@ -193,11 +192,30 @@ input,
 select {
   color-scheme: dark;
   background: transparent;
-  padding: 0px 0px 2px 0px;
-  margin: 8px 0px 16px 0px;
+  padding: 0px;
   border: none;
-  border-bottom: 1px solid white;
+  border-bottom: solid;
+  border-bottom-color:white;
   outline: none;
+}
+
+label {
+  border-bottom: solid;
+  border-bottom-color:red;
+}
+
+.form-field label,.form-field input, .form-field select {
+  flex-basis: 100%;
+  text-align: center;
+}
+
+
+
+.form-field {
+  vertical-align: middle;
+  width: 40vw;
+  display: flex;
+  gap: 20px;
 }
 
 input:hover,
@@ -231,14 +249,18 @@ a {
 
 body {
   background-color: black;
+  overflow-y: scroll;
 }
 
-/* admin */
-
 .shop {
-  background-image: url("output-onlinepngtools.png");
+  background-image: url("imageedit_1_3063756098.png");
   background-repeat: no-repeat;
   background-position: center;
   background-attachment: fixed;
-  
+  background-size: contain;
+}
+
+.action-link {
+  padding-top: 10px;
+  display: inline-block;
 }

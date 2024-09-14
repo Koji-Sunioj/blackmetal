@@ -16,24 +16,26 @@
     <hr />
     <h1></h1>
     <form id="form_id" onsubmit="auth(event)" autocomplete="off">
-      <label for="username">username:</label>
-      <input
-        type="text"
-        name="username"
-        required
-        minlength="5"
-        maxlength="20"
-      />
-      <br />
-      <label for="password">password:</label>
-      <input
-        type="password"
-        name="password"
-        required
-        minlength="10"
-        maxlength="20"
-      />
-      <br />
+      <div class="form-field">
+        <label for="username">username:</label>
+        <input
+          type="text"
+          name="username"
+          required
+          minlength="5"
+          maxlength="20"
+        />
+      </div>
+      <div class="form-field">
+        <label for="password">password:</label>
+        <input
+          type="password"
+          name="password"
+          required
+          minlength="10"
+          maxlength="20"
+        />
+      </div>
       <button type="submit">submit</button>
     </form>
   </body>
