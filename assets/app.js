@@ -37,7 +37,7 @@ const checkSession = async () => {
       renderOrders(user, token);
       break;
     case "/admin/add-album":
-      renderAlbumForm();
+      renderAlbumForm(token);
       break;
   }
 
@@ -52,8 +52,10 @@ const checkSession = async () => {
   }
 };
 
-const renderAlbumForm = async () => {
-  const response = await fetch("/api/artists");
+const renderAlbumForm = async (token) => {
+  const response = await fetch("/api/admin/artists", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   const { artists } = await response.json();
   const artistSelect = document.querySelector("[name='artists']");
   artists.forEach((artist) => {
@@ -63,6 +65,23 @@ const renderAlbumForm = async () => {
     newOption.value = name;
     artistSelect.appendChild(newOption);
   });
+};
+
+const checkTime = (event) => {
+  console.log(event);
+  const { ctrlKey, key } = event;
+
+  /* console.log(ctrlKey, key); */
+
+  const number = parseInt(key);
+  const validControl = ctrlKey && ["a", "p", "c", "x", "z"].includes(key);
+  console.log(validControl);
+
+  if (!isNaN(number) || key === ":" || validControl) {
+    console.log("yeah nigga");
+  } else {
+    event.preventDefault();
+  }
 };
 
 const renderOrders = async (user, token) => {
@@ -141,7 +160,7 @@ const checkOut = async (order_id, token) => {
 };
 
 const renderAlbumTable = (albums) => {
-  const [table, tableHeaderRow] = elements(["table", "tr"]);
+  const [table, tableHeaderRow, tBody] = elements(["table", "tr", "tbody"]);
 
   table.classList.add("dispatched-table");
 
@@ -151,7 +170,8 @@ const renderAlbumTable = (albums) => {
     tableHeaderRow.appendChild(td);
   });
 
-  table.appendChild(tableHeaderRow);
+  table.appendChild(tBody);
+  tBody.appendChild(tableHeaderRow);
 
   albums.forEach((album) => {
     const row = element("tr");
@@ -194,7 +214,7 @@ const renderAlbumTable = (albums) => {
       }
       row.appendChild(td);
     });
-    table.appendChild(row);
+    tBody.appendChild(row);
   });
 
   return table;

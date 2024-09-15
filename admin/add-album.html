@@ -17,9 +17,14 @@
     <hr />
     <h1>Create a new album</h1>
     <form>
+      <p>details:</p>
       <div class="form-field">
         <label for="title">album title:</label>
-        <input type="text" name="title" />
+        <input
+          type="text"
+          name="title"
+          placeholder="Storm of the light's bane"
+        />
       </div>
       <div class="form-field">
         <label for="release_year">release year:</label>
@@ -37,6 +42,35 @@
         <label for="artists">artist:</label>
         <select name="artists"></select>
       </div>
+      <p>songs:</p>
+      <table class="dispatched-table" id="songs">
+        <tr>
+          <td>track</td>
+          <td>name</td>
+          <td>duration</td>
+        </tr>
+        <tr>
+          <td><input name="track" type="number" value="1" disabled /></td>
+          <td>
+            <input
+              name="song"
+              type="text"
+              placeholder="At the Fathomless Depths"
+            />
+          </td>
+          <td>
+            <input
+              name="duration"
+              type="text"
+              placeholder="MM:SS or M:SS"
+              pattern="^[0-9]{1,2}:[0-9]{2}$"
+              title="MM:SS or M:SS please"
+              onkeydown="checkTime(event)"
+              maxlength="5"
+            />
+          </td>
+        </tr>
+      </table>
     </form>
   </body>
 </html>

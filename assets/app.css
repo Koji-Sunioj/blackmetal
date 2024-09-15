@@ -123,25 +123,31 @@ select {
   border: 1px solid white;
 }
 
-.dispatched-table > tr > td {
+.dispatched-table > tbody > tr > td {
   border: 1px solid;
   vertical-align: middle;
   text-align: center;
 }
 
-.dispatched-table > tr > td:nth-child(1) {
+.dispatched-table > tbody > tr > td > input {
+  width: 100%;
+  text-align: center;
+  border: none;
+}
+
+.dispatched-table > tbody > tr > td:nth-child(1) {
   width: 10vw;
 }
 
-.dispatched-table > tr > td:nth-child(2) {
+.dispatched-table > tbody > tbody > tr > td:nth-child(2) {
   width: 40vw;
 }
 
-.dispatched-table > tr > td:nth-child(3) {
+.dispatched-table > tbody> tr > td:nth-child(3) {
   width: 20vw;
 }
 
-.dispatched-table > tr > td:nth-child(4) {
+.dispatched-table > tbody > tr > td:nth-child(4) {
   width: 10vw;
 }
 
@@ -152,8 +158,6 @@ select {
 #info-div > table > tr > td:nth-child(3) {
   text-align: end;
 }
-
-
 
 @media (max-width: 768px)  {
   .hideable-path {
@@ -209,8 +213,6 @@ label {
   text-align: center;
 }
 
-
-
 .form-field {
   vertical-align: middle;
   width: 40vw;
@@ -252,6 +254,18 @@ body {
   overflow-y: scroll;
 }
 
+
+.action-link {
+  padding-top: 10px;
+  display: inline-block;
+}
+
+/* admin albums*/
+
+#songs {
+  width: 70vw;
+}
+
 .shop {
   background-image: url("imageedit_1_3063756098.png");
   background-repeat: no-repeat;
@@ -260,7 +274,3 @@ body {
   background-size: contain;
 }
 
-.action-link {
-  padding-top: 10px;
-  display: inline-block;
-}
