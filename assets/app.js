@@ -68,20 +68,61 @@ const renderAlbumForm = async (token) => {
 };
 
 const checkTime = (event) => {
-  console.log(event);
-  const { ctrlKey, key } = event;
-
-  /* console.log(ctrlKey, key); */
+  const { ctrlKey, key, keyCode } = event;
 
   const number = parseInt(key);
+  const validNavigation = [46, 8, 116, 37, 39].includes(keyCode);
   const validControl = ctrlKey && ["a", "p", "c", "x", "z"].includes(key);
-  console.log(validControl);
 
-  if (!isNaN(number) || key === ":" || validControl) {
+  if (!isNaN(number) || key === ":" || validControl || validNavigation) {
     console.log("yeah nigga");
   } else {
     event.preventDefault();
   }
+};
+
+const addSong = () => {
+  const tbody = document.getElementById("songs").querySelector("tbody");
+
+  if (tbody.children.length <= 20) {
+    const lastTrack = Array.from(tbody.children)[
+      tbody.children.length - 1
+    ].cloneNode(true);
+    lastTrack.removeAttribute("id");
+
+    Array.from(lastTrack.children).forEach((child) => {
+      const input = child.children[0];
+      if (input.name === "track") {
+        const { value } = input;
+        input.value = String(Number(value) + 1);
+      }
+    });
+
+    tbody.appendChild(lastTrack);
+  } else {
+    alert("too many tracks");
+  }
+};
+
+const removeSong = () => {
+  const tbody = document.getElementById("songs").querySelector("tbody");
+
+  if (tbody.children.length > 2) {
+    const lastTrack = Array.from(tbody.children)[tbody.children.length - 1];
+    lastTrack.remove();
+  } else {
+    alert("need at least one track");
+  }
+};
+
+const addPhoto = (event) => {
+  const photo = event.target.files[0];
+  console.log(photo);
+  const img = document.getElementById("photo-preview");
+  const imgName = document.getElementById("photo-name");
+  img.src = URL.createObjectURL(photo);
+  imgName.innerText = `file name: ${photo.name}`;
+  //console.log(photo);
 };
 
 const renderOrders = async (user, token) => {

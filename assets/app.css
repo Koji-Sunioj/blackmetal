@@ -274,3 +274,18 @@ body {
   background-size: contain;
 }
 
+#photo-preview {
+  width: 70vw;
+}
+
+input:invalid + span::after {
+  position: absolute;
+  content: "\0274C";
+  padding-top: 10px;
+}
+
+input:valid + span::after {
+  position: absolute;
+  content: "\026A1";
+  padding-top: 10px;
+}

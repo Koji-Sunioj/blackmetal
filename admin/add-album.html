@@ -17,6 +17,7 @@
     <hr />
     <h1>Create a new album</h1>
     <form>
+      <hr />
       <p>details:</p>
       <div class="form-field">
         <label for="title">album title:</label>
@@ -24,53 +25,94 @@
           type="text"
           name="title"
           placeholder="Storm of the light's bane"
+          minlength="1"
+          required
         />
+        <span></span>
       </div>
       <div class="form-field">
         <label for="release_year">release year:</label>
-        <input type="number" name="release_year" value="1984" />
+        <input
+          type="number"
+          name="release_year"
+          value="1984"
+          min="1970"
+          max="2025"
+          required
+        />
+        <span></span>
       </div>
       <div class="form-field">
         <label for="price">price:</label>
-        <input type="number" name="price" value="0.00" />
+        <input
+          type="number"
+          name="price"
+          value="0.00"
+          min="1.00"
+          max="100.00"
+          required
+        />
       </div>
+      <span></span>
       <div class="form-field">
         <label for="stock">stock:</label>
-        <input type="number" name="stock" value="0" />
+        <input type="number" name="stock" value="0" min="1" max="100" />
       </div>
       <div class="form-field">
         <label for="artists">artist:</label>
         <select name="artists"></select>
       </div>
+      <br />
+      <hr />
       <p>songs:</p>
       <table class="dispatched-table" id="songs">
-        <tr>
-          <td>track</td>
-          <td>name</td>
-          <td>duration</td>
-        </tr>
-        <tr>
-          <td><input name="track" type="number" value="1" disabled /></td>
-          <td>
-            <input
-              name="song"
-              type="text"
-              placeholder="At the Fathomless Depths"
-            />
-          </td>
-          <td>
-            <input
-              name="duration"
-              type="text"
-              placeholder="MM:SS or M:SS"
-              pattern="^[0-9]{1,2}:[0-9]{2}$"
-              title="MM:SS or M:SS please"
-              onkeydown="checkTime(event)"
-              maxlength="5"
-            />
-          </td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>track</td>
+            <td>name</td>
+            <td>duration</td>
+          </tr>
+          <tr>
+            <td><input name="track" type="number" value="1" disabled /></td>
+            <td>
+              <input
+                name="song"
+                type="text"
+                placeholder="At the Fathomless Depths"
+              />
+            </td>
+            <td>
+              <input
+                name="duration"
+                type="text"
+                placeholder="MM:SS or M:SS"
+                pattern="^[0-9]{1,2}:[0-9]{2}$"
+                title="MM:SS or M:SS please"
+                onkeydown="checkTime(event)"
+                maxlength="5"
+              />
+            </td>
+          </tr>
+        </tbody>
       </table>
+      <button type="button" onclick="addSong()">add track</button>
+      <button type="button" onclick="removeSong()">remove track</button>
+
+      <hr />
+      <p>add a photo:</p>
+      <button type="button" onclick="document.getElementById('photo').click()">
+        Select Image
+      </button>
+      <input
+        type="file"
+        accept="image/*"
+        name="photo"
+        id="photo"
+        style="visibility: hidden"
+        onchange="addPhoto(event)"
+      />
+      <p id="photo-name"></p>
+      <img id="photo-preview" />
     </form>
   </body>
 </html>
