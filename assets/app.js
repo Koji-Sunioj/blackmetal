@@ -57,7 +57,7 @@ const renderAlbumForm = async (token) => {
     headers: { Authorization: `Bearer ${token}` },
   });
   const { artists } = await response.json();
-  const artistSelect = document.querySelector("[name='artists']");
+  const artistSelect = document.querySelector("[name='artist']");
   artists.forEach((artist) => {
     const { name } = artist;
     const newOption = element("option");
@@ -72,35 +72,12 @@ const checkTime = (event) => {
 
   const number = parseInt(key);
   const validNavigation = [46, 8, 116, 37, 39].includes(keyCode);
-  const validControl = ctrlKey && ["a", "p", "c", "x", "z"].includes(key);
+  const validControl = ctrlKey && ["a", "p", "c", "x", "z", "v"].includes(key);
 
   if (!isNaN(number) || key === ":" || validControl || validNavigation) {
-    console.log("yeah nigga");
+    return true;
   } else {
     event.preventDefault();
-  }
-};
-
-const addSong = () => {
-  const tbody = document.getElementById("songs").querySelector("tbody");
-
-  if (tbody.children.length <= 20) {
-    const lastTrack = Array.from(tbody.children)[
-      tbody.children.length - 1
-    ].cloneNode(true);
-    lastTrack.removeAttribute("id");
-
-    Array.from(lastTrack.children).forEach((child) => {
-      const input = child.children[0];
-      if (input.name === "track") {
-        const { value } = input;
-        input.value = String(Number(value) + 1);
-      }
-    });
-
-    tbody.appendChild(lastTrack);
-  } else {
-    alert("too many tracks");
   }
 };
 
@@ -115,14 +92,76 @@ const removeSong = () => {
   }
 };
 
+const auth = async (event) => {
+  event.preventDefault();
+  const {
+    target: {
+      username: { value: username },
+      password: { value: password },
+    },
+  } = event;
+
+  const {
+    location: { pathname: uri },
+  } = window;
+
+  const url = `/api${uri}`;
+
+  const response = await fetch(url, {
+    body: JSON.stringify({ username: username, password: password }),
+    method: "POST",
+  });
+
+  const { status } = response;
+  const { detail, token } = await response.json();
+  alert(detail);
+
+  if (uri === "/sign-in") document.cookie = `token=${token}`;
+  status === 200 && window.location.replace(uri.replace(uri, "/"));
+};
+
+const addSong = () => {
+  const tbody = document.getElementById("songs").querySelector("tbody");
+
+  if (tbody.children.length <= 20) {
+    const lastTrack = Array.from(tbody.children)[
+      tbody.children.length - 1
+    ].cloneNode(true);
+    lastTrack.removeAttribute("id");
+
+    Array.from(lastTrack.children).forEach((child) => {
+      const input = child.children[0];
+      if (input.name.includes("track")) {
+        const { value } = input;
+        input.value = String(Number(value) + 1);
+      }
+      const [inputName, inputNumber] = input.name.split("_");
+      input.name = inputName + "_" + String(Number(inputNumber) + 1);
+    });
+
+    tbody.appendChild(lastTrack);
+  } else {
+    alert("too many tracks");
+  }
+};
+
+const sendAlbum = async (event) => {
+  event.preventDefault();
+
+  const currentForm = new FormData(event.target);
+  const token = document.cookie.match(/token=(.*$)/)[1];
+
+  const response = await fetch("/api/admin/albums", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: currentForm,
+  });
+};
+
 const addPhoto = (event) => {
   const photo = event.target.files[0];
-  console.log(photo);
   const img = document.getElementById("photo-preview");
-  const imgName = document.getElementById("photo-name");
   img.src = URL.createObjectURL(photo);
-  imgName.innerText = `file name: ${photo.name}`;
-  //console.log(photo);
 };
 
 const renderOrders = async (user, token) => {
@@ -673,32 +712,4 @@ const submitQuery = (event) => {
 
 const logOut = () => {
   document.cookie = "token=; Max-Age=0; path=/; domain=" + location.host;
-};
-
-const auth = async (event) => {
-  event.preventDefault();
-  const {
-    target: {
-      username: { value: username },
-      password: { value: password },
-    },
-  } = event;
-
-  const {
-    location: { pathname: uri },
-  } = window;
-
-  const url = `/api${uri}`;
-
-  const response = await fetch(url, {
-    body: JSON.stringify({ username: username, password: password }),
-    method: "POST",
-  });
-
-  const { status } = response;
-  const { detail, token } = await response.json();
-  alert(detail);
-
-  if (uri === "/sign-in") document.cookie = `token=${token}`;
-  status === 200 && window.location.replace(uri.replace(uri, "/"));
 };

@@ -208,17 +208,9 @@ label {
   border-bottom-color:red;
 }
 
-.form-field label,.form-field input, .form-field select {
-  flex-basis: 100%;
-  text-align: center;
-}
 
-.form-field {
-  vertical-align: middle;
-  width: 40vw;
-  display: flex;
-  gap: 20px;
-}
+
+
 
 input:hover,
 input:focus,
@@ -278,14 +270,18 @@ body {
   width: 70vw;
 }
 
-input:invalid + span::after {
-  position: absolute;
-  content: "\0274C";
-  padding-top: 10px;
+.form-field {
+  vertical-align: middle;
+  width: 50vw;
+  display: flex;
+  gap: 10px;
 }
 
-input:valid + span::after {
-  position: absolute;
-  content: "\026A1";
-  padding-top: 10px;
+.form-field label,.form-field input, .form-field select {
+  flex-basis: 100%;
+  text-align: center;
+}
+
+::-webkit-file-upload-button,::file-selector-button {
+  display: none;
 }
