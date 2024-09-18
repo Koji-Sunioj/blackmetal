@@ -81,17 +81,6 @@ const checkTime = (event) => {
   }
 };
 
-const removeSong = () => {
-  const tbody = document.getElementById("songs").querySelector("tbody");
-
-  if (tbody.children.length > 2) {
-    const lastTrack = Array.from(tbody.children)[tbody.children.length - 1];
-    lastTrack.remove();
-  } else {
-    alert("need at least one track");
-  }
-};
-
 const auth = async (event) => {
   event.preventDefault();
   const {
@@ -118,6 +107,17 @@ const auth = async (event) => {
 
   if (uri === "/sign-in") document.cookie = `token=${token}`;
   status === 200 && window.location.replace(uri.replace(uri, "/"));
+};
+
+const removeSong = () => {
+  const tbody = document.getElementById("songs").querySelector("tbody");
+
+  if (tbody.children.length > 2) {
+    const lastTrack = Array.from(tbody.children)[tbody.children.length - 1];
+    lastTrack.remove();
+  } else {
+    alert("need at least one track");
+  }
 };
 
 const addSong = () => {
