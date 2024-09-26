@@ -282,6 +282,51 @@ body {
   text-align: center;
 }
 
+.form-text-area {
+  width: 50vw;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-text-area {
+  text-align: center;
+}
+
+.form-text-area  textarea{
+  margin-top: 20px;
+  height: 10vh;
+  background-color: #1a1c1b;
+  font-family: "Old English Five", Tahoma;
+  color: white;
+}
+
 ::-webkit-file-upload-button,::file-selector-button {
+  display: none;
+}
+
+.action-group {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+fieldset {
+  border:0 none;
+  padding: 0px;
+  margin: 0px;
+}
+
+.action-group div input[type="radio"] {
+  display: table-cell;
+  height: 100%;
+  vertical-align: middle;
+}
+
+#artists-select {
+  overflow-y: hidden;
+  border-bottom: none;
+}
+
+select::-ms-expand {
   display: none;
 }

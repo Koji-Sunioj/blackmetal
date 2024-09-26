@@ -36,8 +36,11 @@ const checkSession = async () => {
     case "/my-account/orders":
       renderOrders(user, token);
       break;
-    case "/admin/add-album":
+    case "/admin/manage-album":
       renderAlbumForm(token);
+      break;
+    case "/admin/manage-artist":
+      renderManageAlbum(token);
       break;
   }
 
@@ -52,6 +55,24 @@ const checkSession = async () => {
   }
 };
 
+const renderManageAlbum = async (token) => {
+  const response = await fetch("/api/admin/artists", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const { artists } = await response.json();
+
+  const artistSelect = document.querySelector("[name='artists']");
+  artists.forEach((artist) => {
+    const { name } = artist;
+    const newOption = element("option");
+    newOption.innerHTML = name;
+    newOption.value = name;
+    newOption.setAttribute("disabled", "true");
+    artistSelect.appendChild(newOption);
+  });
+  artistSelect.size = artists.length;
+};
+
 const renderAlbumForm = async (token) => {
   const response = await fetch("/api/admin/artists", {
     headers: { Authorization: `Bearer ${token}` },
@@ -59,10 +80,10 @@ const renderAlbumForm = async (token) => {
   const { artists } = await response.json();
   const artistSelect = document.querySelector("[name='artist']");
   artists.forEach((artist) => {
-    const { name } = artist;
+    const { name, artist_id } = artist;
     const newOption = element("option");
     newOption.innerHTML = name;
-    newOption.value = name;
+    newOption.value = artist_id;
     artistSelect.appendChild(newOption);
   });
 };
@@ -131,8 +152,9 @@ const addSong = () => {
 
     Array.from(lastTrack.children).forEach((child) => {
       const input = child.children[0];
+      const { value } = input;
+      input.value = "";
       if (input.name.includes("track")) {
-        const { value } = input;
         input.value = String(Number(value) + 1);
       }
       const [inputName, inputNumber] = input.name.split("_");
@@ -146,9 +168,17 @@ const addSong = () => {
 };
 
 const sendAlbum = async (event) => {
+  const fieldSet = document.querySelector("fieldset");
   event.preventDefault();
 
   const currentForm = new FormData(event.target);
+
+  for (var pair of currentForm.entries()) {
+    if (typeof pair[1] === "string") {
+      currentForm.set(pair[0], pair[1].trim());
+    }
+  }
+
   const token = document.cookie.match(/token=(.*$)/)[1];
 
   const response = await fetch("/api/admin/albums", {
@@ -156,6 +186,40 @@ const sendAlbum = async (event) => {
     headers: { Authorization: `Bearer ${token}` },
     body: currentForm,
   });
+
+  const { detail } = await response.json();
+
+  fieldSet.removeAttribute("disabled");
+
+  alert(detail);
+
+  if (response.status === 200) {
+    location.reload();
+  }
+};
+
+const changeAlbumForm = async (event) => {
+  const hOne = document.querySelector("h1");
+  const fieldSet = document.querySelector("fieldset");
+  fieldSet.setAttribute("disabled", true);
+
+  const {
+    target: { value: action },
+  } = event;
+
+  const formText =
+    action === "edit" ? "Edit an existing album" : "Create a new album";
+
+  if (action === "edit") {
+    const url = "/api/albums?page=1&sort=name&direction=ascending";
+
+    const response = await fetch(url);
+    const { albums, pages } = await response.json();
+    console.log(albums);
+  }
+
+  hOne.innerHTML = formText;
+  fieldSet.removeAttribute("disabled");
 };
 
 const addPhoto = (event) => {
