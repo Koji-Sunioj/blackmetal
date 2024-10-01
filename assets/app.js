@@ -31,16 +31,16 @@ const checkSession = async () => {
       }
       break;
     case "/my-account/":
-      renderUser(user, token);
+      renderUser();
       break;
     case "/my-account/orders":
-      renderOrders(user, token);
+      renderOrders();
       break;
     case "/admin/manage-album":
-      renderAlbumForm(token);
+      renderAlbumForm();
       break;
     case "/admin/manage-artist":
-      renderManageAlbum(token);
+      rendeArtistForm();
       break;
   }
 
@@ -55,10 +55,8 @@ const checkSession = async () => {
   }
 };
 
-const renderManageAlbum = async (token) => {
-  const response = await fetch("/api/admin/artists", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+const rendeArtistForm = async () => {
+  const response = await fetch("/api/admin/artists");
   const { artists } = await response.json();
 
   const artistSelect = document.querySelector("[name='artists']");
@@ -73,10 +71,8 @@ const renderManageAlbum = async (token) => {
   artistSelect.size = artists.length;
 };
 
-const renderAlbumForm = async (token) => {
-  const response = await fetch("/api/admin/artists", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+const renderAlbumForm = async () => {
+  const response = await fetch("/api/admin/artists");
   const { artists } = await response.json();
   const artistSelect = document.querySelector("[name='artist']");
   artists.forEach((artist) => {
@@ -123,10 +119,9 @@ const auth = async (event) => {
   });
 
   const { status } = response;
-  const { detail, token } = await response.json();
+  const { detail } = await response.json();
   alert(detail);
 
-  if (uri === "/sign-in") document.cookie = `token=${token}`;
   status === 200 && window.location.replace(uri.replace(uri, "/"));
 };
 
@@ -215,7 +210,6 @@ const changeAlbumForm = async (event) => {
 
     const response = await fetch(url);
     const { albums, pages } = await response.json();
-    console.log(albums);
   }
 
   hOne.innerHTML = formText;
@@ -228,11 +222,8 @@ const addPhoto = (event) => {
   img.src = URL.createObjectURL(photo);
 };
 
-const renderOrders = async (user, token) => {
-  const url = `/api/orders/${user}`;
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+const renderOrders = async () => {
+  const response = await fetch("/api/orders");
   const { orders, cart } = await response.json();
 
   const targetDiv = document.getElementById("details");
@@ -247,7 +238,7 @@ const renderOrders = async (user, token) => {
     orderBtn.id = "order-button";
     orderBtn.innerText = "Checkout order";
     orderBtn.onclick = () => {
-      checkOut(user, token);
+      checkOut();
     };
 
     [cartHeader, balanceP, table, orderBtn].forEach((element) => {
@@ -286,13 +277,8 @@ const renderOrders = async (user, token) => {
   }
 };
 
-const checkOut = async (order_id, token) => {
-  const url = `/api/cart/${order_id}/checkout`;
-
-  const request = await fetch(url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-  });
+const checkOut = async () => {
+  const request = await fetch("/api/cart/checkout", { method: "POST" });
 
   const { status } = request;
   const { detail } = await request.json();
@@ -318,6 +304,7 @@ const renderAlbumTable = (albums) => {
   tBody.appendChild(tableHeaderRow);
 
   albums.forEach((album) => {
+    console.log("asd");
     const row = element("tr");
 
     Object.keys(album).forEach((key) => {
@@ -337,7 +324,9 @@ const renderAlbumTable = (albums) => {
             const hiddenA = element("a");
             hiddenA.setAttribute("class", "hideable-path");
             hiddenA.setAttribute("href", albumUri);
-            hiddenA.innerText = `${album["artist"]} - ${album["title"]} = ${album["price"]} x ${album["quantity"]}`;
+            hiddenA.innerText = `${album["artist"]} - ${album["title"]} = ${
+              album["price"]
+            } x ${album["quantity"]} = ${album["price"] * album["quantity"]}`;
             td.appendChild(hiddenA);
           }
 
@@ -414,16 +403,7 @@ const renderAlbum = async (uri, token) => {
   const artist_name = noSpaces.match(artistPattern)[0],
     album_title = noSpaces.match(albumPattern)[0];
 
-  const url = `/api/albums/${artist_name}/${album_title}`;
-
-  const params =
-    token !== null
-      ? {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      : {};
-
-  const response = await fetch(url, params);
+  const response = await fetch(`/api/albums/${artist_name}/${album_title}`);
   const { album, songs, cart } = await response.json();
 
   document.title += ` ${album.name} - ${album.title}`;
@@ -519,11 +499,11 @@ const renderAlbum = async (uri, token) => {
     }
 
     salesBtn.onclick = () => {
-      buyAlbum(token, album.album_id);
+      buyAlbum(album.album_id);
     };
 
     removeBtn.onclick = () => {
-      removeAlbum(token, album.album_id);
+      removeAlbum(album.album_id);
     };
 
     if (cart > 0) {
@@ -557,46 +537,6 @@ const renderAuthForm = (uri) => {
   }
 
   document.querySelector("h1").innerHTML = h1text;
-};
-
-const renderUser = async (username, token) => {
-  const url = `/api/users/${username}`;
-  const request = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const { user } = await request.json();
-  const targetDiv = document.getElementById("details");
-
-  Object.keys(user)
-    .filter((detail) => detail !== "orders" && detail !== "cart")
-    .forEach((param) => {
-      const pElement = element("p");
-      if (param.includes("created")) {
-        pElement.innerText = `${param}: ${user[param].substring(0, 10)} ${user[
-          param
-        ].substring(11, 16)}`;
-      } else {
-        pElement.innerText = `${param}: ${user[param]}`;
-      }
-
-      targetDiv.appendChild(pElement);
-    });
-
-  const { orders, cart } = user;
-
-  if (orders > 0 || cart > 0) {
-    const existingHref = document.getElementById("log-out");
-    const [newHref, newLine] = elements(["a", "br"]);
-    const ordersString = orders > 0 ? `${orders} order(s) dispatched.` : "";
-    const cartString = cart > 0 ? `${cart} albums in cart.` : "";
-
-    newHref.setAttribute("href", "/my-account/orders");
-    newHref.innerText = `Your orders: ${ordersString} ${cartString}`;
-    newHref.classList.add("action-link");
-
-    existingHref.insertAdjacentElement("afterend", newHref);
-    existingHref.insertAdjacentElement("afterend", newLine);
-  }
 };
 
 //misc functions
@@ -653,76 +593,9 @@ const toUrlCase = (value) => {
   return value.toLowerCase().replace(/\s/g, "-");
 };
 
-const buyAlbum = async (token, album_id) => {
-  const salesBtn = document.getElementById("buy-album");
-  salesBtn.disabled = true;
-
-  const url = `/api/cart/${album_id}/add`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  const { status } = response;
-  const { remaining, cart } = await response.json();
-
-  switch (status) {
-    case 200:
-      const stockP = document.getElementById("stock-p");
-      stockP.innerText = String(remaining);
-      const removeBtn = document.getElementById("remove-button");
-      const cartInfo = document.getElementById("cart-info");
-      cartInfo.innerText = `${cart} of these albums are in your cart.`;
-      removeBtn.style.display = "inline-block";
-
-      if (remaining === 0) {
-        salesBtn.classList.add("disabled-button");
-      } else {
-        salesBtn.disabled = false;
-      }
-
-      alert("this album has been added to your cart");
-      break;
-  }
-};
-
-const removeAlbum = async (token, album_id) => {
-  const removeBtn = document.getElementById("remove-button");
-  removeBtn.disabled = true;
-
-  const url = `/api/cart/${album_id}/remove`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  const { status } = response;
-  const { remaining, cart } = await response.json();
-
-  switch (status) {
-    case 200:
-      const stockP = document.getElementById("stock-p");
-      stockP.innerText = String(remaining);
-      const salesBtn = document.getElementById("buy-album");
-      const cartInfo = document.getElementById("cart-info");
-      cartInfo.innerText =
-        cart <= 0 ? "" : `${cart} of these albums are in your cart.`;
-      salesBtn.classList.remove("disabled-button");
-
-      if (cart === 0) {
-        removeBtn.style.display = "none";
-      }
-
-      removeBtn.disabled = false;
-      alert("this album has been removed from your cart");
-  }
-};
-
 const checkToken = async () => {
   const accountLink = document.getElementById("account-link");
-
+  console.log(document.cookie);
   try {
     const loginToken = document.cookie.match(/token=(.*$)/)[1];
     const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
@@ -776,4 +649,104 @@ const submitQuery = (event) => {
 
 const logOut = () => {
   document.cookie = "token=; Max-Age=0; path=/; domain=" + location.host;
+};
+
+//fetches
+
+const removeAlbum = async (album_id) => {
+  const removeBtn = document.getElementById("remove-button");
+  removeBtn.disabled = true;
+
+  const response = await fetch(`/api/cart/${album_id}/remove`, {
+    method: "POST",
+  });
+
+  const { status } = response;
+  const { remaining, cart } = await response.json();
+
+  switch (status) {
+    case 200:
+      const stockP = document.getElementById("stock-p");
+      stockP.innerText = String(remaining);
+      const salesBtn = document.getElementById("buy-album");
+      const cartInfo = document.getElementById("cart-info");
+      cartInfo.innerText =
+        cart <= 0 ? "" : `${cart} of these albums are in your cart.`;
+      salesBtn.classList.remove("disabled-button");
+
+      if (cart === 0) {
+        removeBtn.style.display = "none";
+      }
+
+      removeBtn.disabled = false;
+      alert("this album has been removed from your cart");
+  }
+};
+
+const buyAlbum = async (album_id) => {
+  const salesBtn = document.getElementById("buy-album");
+  salesBtn.disabled = true;
+
+  const response = await fetch(`/api/cart/${album_id}/add`, {
+    method: "POST",
+  });
+
+  const { status } = response;
+  const { remaining, cart } = await response.json();
+
+  switch (status) {
+    case 200:
+      const stockP = document.getElementById("stock-p");
+      stockP.innerText = String(remaining);
+      const removeBtn = document.getElementById("remove-button");
+      const cartInfo = document.getElementById("cart-info");
+      cartInfo.innerText = `${cart} of these albums are in your cart.`;
+      removeBtn.style.display = "inline-block";
+
+      if (remaining === 0) {
+        salesBtn.classList.add("disabled-button");
+      } else {
+        salesBtn.disabled = false;
+      }
+
+      alert("this album has been added to your cart");
+      break;
+  }
+};
+
+const renderUser = async () => {
+  const request = await fetch(`/api/user`);
+  const { user } = await request.json();
+  const targetDiv = document.getElementById("details");
+
+  Object.keys(user)
+    .filter((detail) => detail !== "orders" && detail !== "cart")
+    .forEach((param) => {
+      const pElement = element("p");
+      if (param.includes("created")) {
+        pElement.innerText = `${param}: ${user[param].substring(0, 10)} ${user[
+          param
+        ].substring(11, 16)}`;
+      } else {
+        pElement.innerText = `${param}: ${user[param]}`;
+      }
+
+      targetDiv.appendChild(pElement);
+    });
+
+  const { orders, cart } = user;
+
+  if (orders > 0 || cart > 0) {
+    const existingHref = document.getElementById("log-out");
+    const [newHref, newLine] = elements(["a", "br"]);
+    const ordersString = orders > 0 ? `${orders} order(s) dispatched.` : "";
+    const cartString = cart > 0 ? `${cart} albums in cart.` : "";
+
+    newHref.setAttribute("href", "/my-account/orders");
+    newHref.innerText = `Your orders: ${ordersString} ${cartString}`;
+    newHref.classList.add("action-link");
+
+    existingHref.insertAdjacentElement("afterend", newHref);
+    existingHref.insertAdjacentElement("afterend", newLine);
+  }
 };

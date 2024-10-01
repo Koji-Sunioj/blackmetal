@@ -176,16 +176,16 @@ select {
     display: none;
   }
 
-  .dispatched-table > tr > td:nth-child(2) {
+  .dispatched-table > tbody > tr > td:nth-child(2) {
     width: 60vw;
   }
-  .dispatched-table > tr > td:nth-child(3) {
+  .dispatched-table > tbody > tr > td:nth-child(3) {
     display: none;
   }
-  .dispatched-table > tr > td:nth-child(4) {
+  .dispatched-table > tbody > tr > td:nth-child(4) {
     display: none;
   }
-  .dispatched-table > tr > td:nth-child(5) {
+  .dispatched-table > tbody > tr > td:nth-child(5) {
     display: none;
   }
 }
