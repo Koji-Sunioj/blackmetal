@@ -4,7 +4,7 @@ const checkSession = async () => {
   const {
     location: { pathname: uri, search },
   } = window;
-
+  const url = new URLSearchParams(search);
   const { token } = await checkToken();
 
   switch (uri) {
@@ -13,7 +13,6 @@ const checkSession = async () => {
       renderAuthForm(uri);
       break;
     case "/albums":
-      const url = new URLSearchParams(search);
       const page = url.get("page"),
         sort = url.get("sort"),
         direction = url.get("direction"),
@@ -42,6 +41,16 @@ const checkSession = async () => {
     case "/admin/manage-artist":
       rendeArtistForm();
       break;
+    case "/admin/":
+      const view = url.get("view");
+      if (view === null) {
+        url.set("view", "add");
+        window.location.search = url;
+      } else {
+        renderAdminView(view);
+      }
+
+      break;
   }
 
   if (uri.includes("artist")) {
@@ -52,6 +61,38 @@ const checkSession = async () => {
       case /^\/artist\/.+\/album\/.+$/.test(uri):
         renderAlbum(uri, token);
     }
+  }
+};
+
+const changeView = async (event) => {
+  const {
+    target: { value: view },
+  } = event;
+
+  const {
+    location: { search },
+  } = window;
+  const url = new URLSearchParams(search);
+
+  url.set("view", view);
+  window.location.search = url;
+};
+
+const renderAdminView = async (view) => {
+  document.getElementById(view + "-radio").checked = true;
+
+  switch (view) {
+    case "add":
+      const viewDiv = document.getElementById("admin-view");
+      const [manageArtist, mangeAlbum, br] = elements(["a", "a", "br"]);
+      manageArtist.innerText = "Add an artist";
+      manageArtist.setAttribute("href", "/admin/manage-artist?state=new");
+      mangeAlbum.innerText = "Add an album";
+      mangeAlbum.setAttribute("href", "/admin/manage-album?state=new");
+      [manageArtist, br, mangeAlbum].forEach((element) => {
+        viewDiv.appendChild(element);
+      });
+      break;
   }
 };
 
@@ -191,29 +232,6 @@ const sendAlbum = async (event) => {
   if (response.status === 200) {
     location.reload();
   }
-};
-
-const changeAlbumForm = async (event) => {
-  const hOne = document.querySelector("h1");
-  const fieldSet = document.querySelector("fieldset");
-  fieldSet.setAttribute("disabled", true);
-
-  const {
-    target: { value: action },
-  } = event;
-
-  const formText =
-    action === "edit" ? "Edit an existing album" : "Create a new album";
-
-  if (action === "edit") {
-    const url = "/api/albums?page=1&sort=name&direction=ascending";
-
-    const response = await fetch(url);
-    const { albums, pages } = await response.json();
-  }
-
-  hOne.innerHTML = formText;
-  fieldSet.removeAttribute("disabled");
 };
 
 const addPhoto = (event) => {

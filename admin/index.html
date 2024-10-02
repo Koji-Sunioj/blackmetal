@@ -16,8 +16,39 @@
     </div>
     <hr />
     <h1>Options:</h1>
-    <a href="/admin/manage-artist" class="action-link">Manage artist</a>
-    <br />
-    <a href="/admin/manage-album" class="action-link">Manage album</a>
+    <div class="action-group">
+      <div>
+        <label for="add">add artist or album</label>
+        <input
+          type="radio"
+          id="add-radio"
+          name="form_action"
+          value="add"
+          onchange="changeView(event)"
+        />
+      </div>
+      <div>
+        <label for="albums">view albums</label>
+        <input
+          type="radio"
+          id="albums-radio"
+          name="form_action"
+          value="albums"
+          onchange="changeView(event)"
+        />
+      </div>
+      <div>
+        <label for="artists">view artists</label>
+        <input
+          type="radio"
+          id="artists-radio"
+          name="form_action"
+          value="artists"
+          onchange="changeView(event)"
+        />
+      </div>
+    </div>
+    <hr />
+    <div id="admin-view"></div>
   </body>
 </html>

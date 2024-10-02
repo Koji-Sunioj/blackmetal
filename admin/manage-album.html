@@ -19,33 +19,6 @@
     <form onsubmit="sendAlbum(event)">
       <fieldset>
         <hr />
-        <div class="action-group">
-          <div>
-            <p>actions:</p>
-          </div>
-          <div>
-            <label for="add">add</label>
-            <input
-              type="radio"
-              id="add"
-              name="form_action"
-              checked
-              onchange="changeAlbumForm(event)"
-              value="add"
-            />
-          </div>
-          <div>
-            <label for="edit">edit</label>
-            <input
-              type="radio"
-              id="edit"
-              name="form_action"
-              value="edit"
-              onchange="changeAlbumForm(event)"
-            />
-          </div>
-        </div>
-        <hr />
         <div id="albums-table"></div>
         <p>details:</p>
         <div class="form-field">
