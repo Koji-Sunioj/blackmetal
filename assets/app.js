@@ -5,7 +5,7 @@ const checkSession = async () => {
     location: { pathname: uri, search },
   } = window;
 
-  const { user, token } = await checkToken();
+  const { token } = await checkToken();
 
   switch (uri) {
     case "/register":
@@ -595,7 +595,7 @@ const toUrlCase = (value) => {
 
 const checkToken = async () => {
   const accountLink = document.getElementById("account-link");
-  console.log(document.cookie);
+
   try {
     const loginToken = document.cookie.match(/token=(.*$)/)[1];
     const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
@@ -609,14 +609,14 @@ const checkToken = async () => {
     if (jwtPayload["sub"] !== null) {
       accountLink.setAttribute("href", "/my-account");
 
-      return { user: jwtPayload["sub"], token: loginToken };
+      return { token: loginToken };
     } else {
       throw new Error("empty credentials");
     }
   } catch (error) {
     accountLink.setAttribute("href", "/sign-in");
     logOut();
-    return { user: null, token: null };
+    return { token: null };
   }
 };
 
@@ -664,6 +664,8 @@ const removeAlbum = async (album_id) => {
   const { status } = response;
   const { remaining, cart } = await response.json();
 
+  console.log(cart, remaining);
+
   switch (status) {
     case 200:
       const stockP = document.getElementById("stock-p");
@@ -676,6 +678,10 @@ const removeAlbum = async (album_id) => {
 
       if (cart === 0) {
         removeBtn.style.display = "none";
+      }
+
+      if (remaining > 0) {
+        salesBtn.disabled = false;
       }
 
       removeBtn.disabled = false;
