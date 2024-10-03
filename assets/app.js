@@ -13,19 +13,12 @@ const checkSession = async () => {
       renderAuthForm(uri);
       break;
     case "/albums":
-      const page = url.get("page"),
-        sort = url.get("sort"),
-        direction = url.get("direction"),
-        query = url.get("query");
-      const shouldRedirect = [page, sort, direction].some(
-        (param) => param === null
-      );
-      if (shouldRedirect) {
-        url.set("page", "1");
-        url.set("sort", "name");
-        url.set("direction", "ascending");
-        window.location.search = url;
-      } else {
+      {
+        const { page, sort, direction, query } = albumParams(url);
+        checkAndRedirect(
+          [page, sort, direction],
+          "?page=1&sort=name&direction=ascending"
+        );
         renderAlbums(page, sort, direction, query);
       }
       break;
@@ -42,14 +35,19 @@ const checkSession = async () => {
       rendeArtistForm();
       break;
     case "/admin/":
-      const view = url.get("view");
-      if (view === null) {
-        url.set("view", "add");
-        window.location.search = url;
-      } else {
-        renderAdminView(view);
-      }
+      {
+        const view = url.get("view");
+        checkAndRedirect([view], "?view=add");
 
+        const { page, sort, direction, query } = albumParams(url);
+        if (view === "albums") {
+          checkAndRedirect(
+            [page, sort, direction],
+            "?view=albums&page=1&sort=name&direction=ascending"
+          );
+        }
+        renderAdminView(view, { page, sort, direction, query });
+      }
       break;
   }
 
@@ -64,36 +62,97 @@ const checkSession = async () => {
   }
 };
 
+const renderAdminView = async (view, albumParams) => {
+  document.getElementById(view + "-radio").checked = true;
+  const viewDiv = document.getElementById("admin-view");
+
+  switch (view) {
+    case "add":
+      const [manageArtist, mangeAlbum, br] = elements(["a", "a", "br"]);
+      manageArtist.innerText = "Add an artist";
+      manageArtist.setAttribute("href", "/admin/manage-artist?action=new");
+      mangeAlbum.innerText = "Add an album";
+      mangeAlbum.setAttribute("href", "/admin/manage-album?action=new");
+      [manageArtist, br, mangeAlbum].forEach((element) => {
+        viewDiv.appendChild(element);
+      });
+      break;
+
+    case "albums":
+      const { page, sort, direction, query } = albumParams;
+      const searchParam = query === null ? "" : `&query=${query}`;
+      const url = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
+      const response = await fetch(url);
+      const { albums, pages } = await response.json();
+      const [table, tableBody, header] = elements(["table", "tbody", "tr"]);
+      [
+        "created",
+        "name",
+        "title",
+        "price",
+        "stock",
+        "release year",
+        "photo",
+      ].forEach((value) => {
+        const newHeader = element("td");
+        newHeader.innerText = value;
+        header.appendChild(newHeader);
+      });
+
+      tableBody.appendChild(header);
+      table.appendChild(tableBody);
+      table.classList.add("dispatched-table");
+      viewDiv.appendChild(table);
+
+      albums.forEach((album) => {
+        const newRow = element("tr");
+        const { created, name, title, price, stock, release_year, photo } =
+          album;
+        [created, name, title, price, stock, release_year, photo].forEach(
+          (value) => {}
+        );
+      });
+
+      break;
+  }
+};
+
+const albumParams = (url) => {
+  const page = url.get("page"),
+    sort = url.get("sort"),
+    direction = url.get("direction"),
+    query = url.get("query");
+
+  return { page, sort, direction, query };
+};
+
+const checkAndRedirect = (params, fallBack) => {
+  const shouldRedirect = params.some((param) => param === null);
+  if (shouldRedirect) {
+    window.location.search = new URLSearchParams(fallBack);
+  }
+};
+
 const changeView = async (event) => {
   const {
     target: { value: view },
   } = event;
 
-  const {
-    location: { search },
-  } = window;
-  const url = new URLSearchParams(search);
-
-  url.set("view", view);
-  window.location.search = url;
-};
-
-const renderAdminView = async (view) => {
-  document.getElementById(view + "-radio").checked = true;
+  let urlParams = "";
 
   switch (view) {
     case "add":
-      const viewDiv = document.getElementById("admin-view");
-      const [manageArtist, mangeAlbum, br] = elements(["a", "a", "br"]);
-      manageArtist.innerText = "Add an artist";
-      manageArtist.setAttribute("href", "/admin/manage-artist?state=new");
-      mangeAlbum.innerText = "Add an album";
-      mangeAlbum.setAttribute("href", "/admin/manage-album?state=new");
-      [manageArtist, br, mangeAlbum].forEach((element) => {
-        viewDiv.appendChild(element);
-      });
+      urlParams = "?view=add";
+      break;
+    case "albums":
+      urlParams = "?view=albums&page=1&sort=name&direction=ascending";
+      break;
+    case "artists":
+      urlParams = "?view=artists";
       break;
   }
+
+  window.location.search = urlParams;
 };
 
 const rendeArtistForm = async () => {
