@@ -1,68 +1,14 @@
 //render functions
 
-const checkSession = async () => {
+const renderAdminView = async () => {
   const {
-    location: { pathname: uri, search },
+    location: { search },
   } = window;
   const url = new URLSearchParams(search);
-  const { token } = await checkToken();
 
-  switch (uri) {
-    case "/register":
-    case "/sign-in":
-      renderAuthForm(uri);
-      break;
-    case "/albums":
-      {
-        const { page, sort, direction, query } = albumParams(url);
-        checkAndRedirect(
-          [page, sort, direction],
-          "?page=1&sort=name&direction=ascending"
-        );
-        renderAlbums(page, sort, direction, query);
-      }
-      break;
-    case "/my-account/":
-      renderUser();
-      break;
-    case "/my-account/orders":
-      renderOrders();
-      break;
-    case "/admin/manage-album":
-      renderAlbumForm();
-      break;
-    case "/admin/manage-artist":
-      rendeArtistForm();
-      break;
-    case "/admin/":
-      {
-        const view = url.get("view");
-        checkAndRedirect([view], "?view=add");
+  const view = url.get("view");
+  checkAndRedirect([view], "?view=add");
 
-        const { page, sort, direction, query } = albumParams(url);
-        if (view === "albums") {
-          checkAndRedirect(
-            [page, sort, direction],
-            "?view=albums&page=1&sort=name&direction=ascending"
-          );
-        }
-        renderAdminView(view, { page, sort, direction, query });
-      }
-      break;
-  }
-
-  if (uri.includes("artist")) {
-    switch (true) {
-      case /^\/artist\/[^\/]+$/.test(uri):
-        renderArtist(uri);
-        break;
-      case /^\/artist\/.+\/album\/.+$/.test(uri):
-        renderAlbum(uri, token);
-    }
-  }
-};
-
-const renderAdminView = async (view, albumParams) => {
   document.getElementById(view + "-radio").checked = true;
   const viewDiv = document.getElementById("admin-view");
 
@@ -79,20 +25,25 @@ const renderAdminView = async (view, albumParams) => {
       break;
 
     case "albums":
-      const { page, sort, direction, query } = albumParams;
+      const { page, sort, direction, query } = albumParams(url);
+      checkAndRedirect(
+        [page, sort, direction],
+        "?view=albums&page=1&sort=name&direction=ascending"
+      );
       const searchParam = query === null ? "" : `&query=${query}`;
-      const url = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
-      const response = await fetch(url);
+      const apiUrl = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
+      const response = await fetch(apiUrl);
       const { albums, pages } = await response.json();
+
       const [table, tableBody, header] = elements(["table", "tbody", "tr"]);
       [
-        "created",
-        "name",
+        "photo",
         "title",
-        "price",
+        "name",
         "stock",
         "release year",
-        "photo",
+        "price",
+        "created",
       ].forEach((value) => {
         const newHeader = element("td");
         newHeader.innerText = value;
@@ -100,19 +51,20 @@ const renderAdminView = async (view, albumParams) => {
       });
 
       tableBody.appendChild(header);
-      table.appendChild(tableBody);
+
       table.classList.add("dispatched-table");
-      viewDiv.appendChild(table);
 
       albums.forEach((album) => {
         const newRow = element("tr");
-        const { created, name, title, price, stock, release_year, photo } =
-          album;
-        [created, name, title, price, stock, release_year, photo].forEach(
-          (value) => {}
-        );
+        Object.keys(album).forEach((value) => {
+          const newCell = element("td");
+          newCell.innerText = album[value];
+          newRow.appendChild(newCell);
+        });
+        tableBody.appendChild(newRow);
       });
-
+      table.appendChild(tableBody);
+      viewDiv.appendChild(table);
       break;
   }
 };
@@ -208,10 +160,12 @@ const auth = async (event) => {
   } = event;
 
   const {
-    location: { pathname: uri },
+    location: { pathname },
   } = window;
 
-  const url = `/api${uri}`;
+  const apiUrl = pathname === "/register" ? pathname : "/sign-in";
+
+  const url = `/api${apiUrl}`;
 
   const response = await fetch(url, {
     body: JSON.stringify({ username: username, password: password }),
@@ -222,7 +176,7 @@ const auth = async (event) => {
   const { detail } = await response.json();
   alert(detail);
 
-  status === 200 && window.location.replace(uri.replace(uri, "/"));
+  status === 200 && window.location.replace("/");
 };
 
 const removeSong = () => {
@@ -430,8 +384,12 @@ const renderAlbumTable = (albums) => {
   return table;
 };
 
-const renderArtist = async (uri) => {
-  const artist = uri.split("/")[2];
+const renderArtist = async () => {
+  const {
+    location: { pathname },
+  } = window;
+
+  const artist = pathname.split("/")[2];
   const url = `/api/artist/${artist}`;
   const response = await fetch(url);
   const {
@@ -446,7 +404,19 @@ const renderArtist = async (uri) => {
   renderAlbumTiles(albums);
 };
 
-const renderAlbums = async (page, sort, direction, query) => {
+const renderAlbums = async () => {
+  const {
+    location: { search },
+  } = window;
+
+  const { page, sort, direction, query } = albumParams(
+    new URLSearchParams(search)
+  );
+  checkAndRedirect(
+    [page, sort, direction],
+    "?page=1&sort=name&direction=ascending"
+  );
+
   const searchParam = query === null ? "" : `&query=${query}`;
   const url = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
 
@@ -473,8 +443,12 @@ const renderAlbums = async (page, sort, direction, query) => {
   });
 };
 
-const renderAlbum = async (uri, token) => {
-  const noSpaces = uri.replace(/%20/g, " ");
+const renderAlbum = async () => {
+  const {
+    location: { pathname },
+  } = window;
+
+  const noSpaces = pathname.replace(/%20/g, " ");
   const artistPattern = /(?<=artist\/)[\D\d]+(?=\/album)/,
     albumPattern = /(?<=album\/)[\D\d]+/;
   const artist_name = noSpaces.match(artistPattern)[0],
@@ -559,6 +533,8 @@ const renderAlbum = async (uri, token) => {
     table.appendChild(row);
   });
 
+  const { token } = checkToken();
+
   if (token !== null) {
     const [cartInfo, removeBtn] = elements(["i", "button"]);
 
@@ -594,13 +570,17 @@ const renderAlbum = async (uri, token) => {
   }
 };
 
-const renderAuthForm = (uri) => {
+const renderAuthForm = () => {
+  const {
+    location: { pathname },
+  } = window;
+
   let h1text = "";
-  switch (uri) {
+  switch (pathname) {
     case "/register":
       h1text = "Register as new user";
       break;
-    case "/sign-in":
+    default:
       h1text = "Sign In";
       const nodes = ["a", "br"].map((tag) => element(tag));
       const anchor = nodes.find((node) => node.tagName === "A");
@@ -740,8 +720,6 @@ const removeAlbum = async (album_id) => {
 
   const { status } = response;
   const { remaining, cart } = await response.json();
-
-  console.log(cart, remaining);
 
   switch (status) {
     case 200:
