@@ -1,4 +1,4 @@
-//render functions
+//admin
 
 const renderAdminView = async () => {
   const {
@@ -25,6 +25,8 @@ const renderAdminView = async () => {
       break;
 
     case "albums":
+      const searchForm = document.getElementById("search-form");
+      searchForm.style.display = "flex";
       const { page, sort, direction, query } = albumParams(url);
       checkAndRedirect(
         [page, sort, direction],
@@ -34,6 +36,10 @@ const renderAdminView = async () => {
       const apiUrl = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
       const response = await fetch(apiUrl);
       const { albums, pages } = await response.json();
+
+      document.querySelector("[name='query']").value = query;
+      document.querySelector("[name='direction']").value = direction;
+      document.querySelector("[name='sort']").value = sort;
 
       const [table, tableBody, header] = elements(["table", "tbody", "tr"]);
       [
@@ -56,17 +62,125 @@ const renderAdminView = async () => {
 
       albums.forEach((album) => {
         const newRow = element("tr");
-        Object.keys(album).forEach((value) => {
+        Object.keys(album).forEach((key) => {
           const newCell = element("td");
-          newCell.innerText = album[value];
+          switch (key) {
+            case "photo":
+              const image = element("img");
+              image.src = `/common/${album[key]}`;
+              image.classList.add("table-img");
+              newCell.appendChild(image);
+              break;
+            case "title":
+              const editLink = element("a");
+              editLink.setAttribute(
+                "href",
+                `manage-album?action=edit&album=${toUrlCase(
+                  album[key]
+                )}&artist=${toUrlCase(album["name"])}`
+              );
+              editLink.innerText = album[key];
+              newCell.appendChild(editLink);
+              break;
+            case "created":
+              const utcDate = new Date(`${album[key]} UTC`);
+              newCell.innerText = utcToLocale(utcDate);
+              break;
+            default:
+              newCell.innerText = album[key];
+              break;
+          }
+
           newRow.appendChild(newCell);
         });
         tableBody.appendChild(newRow);
       });
       table.appendChild(tableBody);
       viewDiv.appendChild(table);
+
+      renderPages(pages, sort, direction, searchParam, true);
       break;
   }
+};
+
+const renderPages = (pages, sort, direction, searchParam, hasView = false) => {
+  const firstParam = hasView ? "view=albums&" : "";
+
+  const pageDiv = document.getElementById("pages");
+  pageDiv.style.display = "block";
+
+  [...Array(pages).keys()].forEach((dbPage) => {
+    const htmlRef = dbPage + 1;
+    const pageUrl = `?${firstParam}page=${htmlRef}&sort=${sort}&direction=${direction}${searchParam}`;
+    console.log(pageUrl);
+    const anchor = element("a");
+    anchor.setAttribute("href", pageUrl);
+    anchor.innerHTML = htmlRef;
+    pageDiv.appendChild(anchor);
+    if (htmlRef !== pages) {
+      pageDiv.append(",");
+    }
+  });
+};
+
+const utcToLocale = (date) => {
+  const hour = date.getHours();
+  const minutes = date.getMinutes();
+  const year = date.getFullYear();
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  return `${day}.${month}.${year} ${hour}:${minutes}`;
+};
+
+const rendeArtistForm = async () => {
+  const response = await fetch("/api/admin/artists");
+  const { artists } = await response.json();
+
+  const artistSelect = document.querySelector("[name='artists']");
+  artists.forEach((artist) => {
+    const { name } = artist;
+    const newOption = element("option");
+    newOption.innerHTML = name;
+    newOption.value = name;
+    newOption.setAttribute("disabled", "true");
+    artistSelect.appendChild(newOption);
+  });
+  artistSelect.size = artists.length;
+};
+
+const renderAlbumForm = async () => {
+  const {
+    location: { search },
+  } = window;
+  const url = new URLSearchParams(search);
+
+  const action = url.get("action");
+  checkAndRedirect([action], "?action=new");
+
+  switch (action) {
+    case "edit":
+      const albumParam = url.get("album");
+      const artistName = url.get("artist");
+      checkAndRedirect([albumParam, artistName], "?action=new");
+      const response = await fetch(`/api/albums/${artistName}/${albumParam}`);
+      const { album, songs } = await response.json();
+      console.log(album, songs);
+      break;
+    case "new":
+      console.log("asd");
+      break;
+  }
+
+  const response = await fetch("/api/admin/artists");
+  const { artists } = await response.json();
+  const artistSelect = document.querySelector("[name='artist']");
+  artists.forEach((artist) => {
+    const { name, artist_id } = artist;
+    const newOption = element("option");
+    newOption.innerHTML = name;
+    newOption.value = artist_id;
+    artistSelect.appendChild(newOption);
+  });
 };
 
 const albumParams = (url) => {
@@ -105,35 +219,6 @@ const changeView = async (event) => {
   }
 
   window.location.search = urlParams;
-};
-
-const rendeArtistForm = async () => {
-  const response = await fetch("/api/admin/artists");
-  const { artists } = await response.json();
-
-  const artistSelect = document.querySelector("[name='artists']");
-  artists.forEach((artist) => {
-    const { name } = artist;
-    const newOption = element("option");
-    newOption.innerHTML = name;
-    newOption.value = name;
-    newOption.setAttribute("disabled", "true");
-    artistSelect.appendChild(newOption);
-  });
-  artistSelect.size = artists.length;
-};
-
-const renderAlbumForm = async () => {
-  const response = await fetch("/api/admin/artists");
-  const { artists } = await response.json();
-  const artistSelect = document.querySelector("[name='artist']");
-  artists.forEach((artist) => {
-    const { name, artist_id } = artist;
-    const newOption = element("option");
-    newOption.innerHTML = name;
-    newOption.value = artist_id;
-    artistSelect.appendChild(newOption);
-  });
 };
 
 const checkTime = (event) => {
@@ -429,18 +514,7 @@ const renderAlbums = async () => {
 
   renderAlbumTiles(albums);
 
-  const pageDiv = document.getElementById("pages");
-  [...Array(pages).keys()].forEach((dbPage) => {
-    const htmlRef = dbPage + 1;
-    const pageUrl = `albums?page=${htmlRef}&sort=${sort}&direction=${direction}${searchParam}`;
-    const anchor = element("a");
-    anchor.setAttribute("href", pageUrl);
-    anchor.innerHTML = htmlRef;
-    pageDiv.appendChild(anchor);
-    if (htmlRef !== pages) {
-      pageDiv.append(",");
-    }
-  });
+  renderPages(pages, sort, direction, searchParam);
 };
 
 const renderAlbum = async () => {

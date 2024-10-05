@@ -38,11 +38,15 @@ select option, select optgroup {
 }
 
 #search-form {
-  display: none;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
  
+}
+
+
+#search-form.admin-albums-table, p.admin-albums-table {
+  display: none;
 }
 
 .query-item > input,
@@ -168,27 +172,23 @@ select {
     display: none;
   }
 
-  .dispatched-table > tr > td:nth-child(1) {
-    width: 20vw;
-  }
-
   .dispatched-table > tr:nth-child(1) {
     display: none;
+  }
+
+  .dispatched-table > tbody > tr > td:nth-child(1) {
+    width: 20vw;
   }
 
   .dispatched-table > tbody > tr > td:nth-child(2) {
     width: 60vw;
   }
-  .dispatched-table > tbody > tr > td:nth-child(3) {
+  .dispatched-table > tbody > tr > td:not(:nth-child(1)):not(:nth-child(2)) {
     display: none;
   }
-  .dispatched-table > tbody > tr > td:nth-child(4) {
-    display: none;
-  }
-  .dispatched-table > tbody > tr > td:nth-child(5) {
-    display: none;
-  }
+ 
 }
+
 
 /* misc */
 
