@@ -195,7 +195,8 @@ const albumParams = (url) => {
 const checkAndRedirect = (params, fallBack) => {
   const shouldRedirect = params.some((param) => param === null);
   if (shouldRedirect) {
-    window.location.search = new URLSearchParams(fallBack);
+    window.location.search = fallBack;
+    throw false;
   }
 };
 
@@ -497,6 +498,7 @@ const renderAlbums = async () => {
   const { page, sort, direction, query } = albumParams(
     new URLSearchParams(search)
   );
+
   checkAndRedirect(
     [page, sort, direction],
     "?page=1&sort=name&direction=ascending"
@@ -509,8 +511,9 @@ const renderAlbums = async () => {
   document.querySelector("[name='direction']").value = direction;
   document.querySelector("[name='sort']").value = sort;
 
-  const response = await fetch(url);
-  const { albums, pages } = await response.json();
+  const { albums, pages } = await fetch(url).then((response) =>
+    response.json()
+  );
 
   renderAlbumTiles(albums);
 
@@ -607,9 +610,7 @@ const renderAlbum = async () => {
     table.appendChild(row);
   });
 
-  const { token } = checkToken();
-
-  if (token !== null) {
+  if (cart !== null) {
     const [cartInfo, removeBtn] = elements(["i", "button"]);
 
     cartInfo.id = "cart-info";
@@ -667,7 +668,7 @@ const renderAuthForm = () => {
       break;
   }
 
-  document.querySelector("h1").innerHTML = h1text;
+  //document.querySelector("h1").innerHTML = h1text;
 };
 
 //misc functions
@@ -722,33 +723,6 @@ const renderAlbumTiles = (albums) => {
 
 const toUrlCase = (value) => {
   return value.toLowerCase().replace(/\s/g, "-");
-};
-
-const checkToken = async () => {
-  const accountLink = document.getElementById("account-link");
-
-  try {
-    const loginToken = document.cookie.match(/token=(.*$)/)[1];
-    const jwtPayload = JSON.parse(atob(loginToken.split(".")[1]));
-
-    const expirationDate = new Date(jwtPayload["exp"] * 1000);
-
-    if (expirationDate < new Date()) {
-      throw new Error("expired token");
-    }
-
-    if (jwtPayload["sub"] !== null) {
-      accountLink.setAttribute("href", "/my-account");
-
-      return { token: loginToken };
-    } else {
-      throw new Error("empty credentials");
-    }
-  } catch (error) {
-    accountLink.setAttribute("href", "/sign-in");
-    logOut();
-    return { token: null };
-  }
 };
 
 const submitQuery = (event) => {
