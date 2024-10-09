@@ -266,7 +266,14 @@ body {
   background-size: contain;
 }
 
-#photo-preview {
+
+
+.img-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.img-block input, #photo-preview {
   width: 70vw;
 }
 

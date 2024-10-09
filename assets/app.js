@@ -30,7 +30,7 @@ const renderAdminView = async () => {
       const { page, sort, direction, query } = albumParams(url);
       checkAndRedirect(
         [page, sort, direction],
-        "?view=albums&page=1&sort=name&direction=ascending"
+        "?view=albums&page=1&sort=created&direction=descending"
       );
       const searchParam = query === null ? "" : `&query=${query}`;
       const apiUrl = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
@@ -157,23 +157,9 @@ const renderAlbumForm = async () => {
   const action = url.get("action");
   checkAndRedirect([action], "?action=new");
 
-  switch (action) {
-    case "edit":
-      const albumParam = url.get("album");
-      const artistName = url.get("artist");
-      checkAndRedirect([albumParam, artistName], "?action=new");
-      const response = await fetch(`/api/albums/${artistName}/${albumParam}`);
-      const { album, songs } = await response.json();
-      console.log(album, songs);
-      break;
-    case "new":
-      console.log("asd");
-      break;
-  }
-
   const response = await fetch("/api/admin/artists");
   const { artists } = await response.json();
-  const artistSelect = document.querySelector("[name='artist']");
+  const artistSelect = document.querySelector("[name=artist]");
   artists.forEach((artist) => {
     const { name, artist_id } = artist;
     const newOption = element("option");
@@ -181,6 +167,59 @@ const renderAlbumForm = async () => {
     newOption.value = artist_id;
     artistSelect.appendChild(newOption);
   });
+
+  switch (action) {
+    case "edit":
+      const albumParam = url.get("album");
+      const artistName = url.get("artist");
+      checkAndRedirect([albumParam, artistName], "?action=new");
+      const {
+        album: { name, photo },
+        album,
+        songs,
+      } = await fetch(`/api/albums/${artistName}/${albumParam}`).then(
+        (response) => response.json()
+      );
+
+      ["title", "release_year", "price"].forEach((key) => {
+        const input = document.querySelector(`[name=${key}]`);
+        input.value = input.placeholder = album[key];
+      });
+
+      const existingOption = Array.from(
+        artistSelect.querySelectorAll("option")
+      ).find((option) => option.innerText === name);
+      artistSelect.value = existingOption.value;
+
+      const img = document.getElementById("photo-preview");
+      const imgInput = document.getElementById("photo");
+
+      const imgData = await fetch(`/common/${photo}`).then((response) =>
+        response.blob()
+      );
+
+      const existingFile = new File([imgData], photo);
+      const dataXfer = new DataTransfer();
+      dataXfer.items.add(existingFile);
+      imgInput.files = dataXfer.files;
+      img.src = URL.createObjectURL(existingFile);
+
+      const [songOne, durationOne] = Array.from(
+        document.querySelectorAll("[name=song_1],[name=duration_1]")
+      );
+      const firstSong = songs[0];
+      songOne.value = firstSong.song;
+      durationOne.value =
+        firstSong.duration !== null ? toMMSS(firstSong.duration) : "";
+
+      Object.keys(songs).forEach((track, n) => {
+        n !== 0 && addSong(songs[track]);
+      });
+      break;
+    case "new":
+      console.log("asd");
+      break;
+  }
 };
 
 const albumParams = (url) => {
@@ -212,7 +251,7 @@ const changeView = async (event) => {
       urlParams = "?view=add";
       break;
     case "albums":
-      urlParams = "?view=albums&page=1&sort=name&direction=ascending";
+      urlParams = "?view=albums&page=1&sort=created&direction=descending";
       break;
     case "artists":
       urlParams = "?view=artists";
@@ -276,7 +315,7 @@ const removeSong = () => {
   }
 };
 
-const addSong = () => {
+const addSong = (track = null) => {
   const tbody = document.getElementById("songs").querySelector("tbody");
 
   if (tbody.children.length <= 20) {
@@ -287,19 +326,36 @@ const addSong = () => {
 
     Array.from(lastTrack.children).forEach((child) => {
       const input = child.children[0];
-      const { value } = input;
-      input.value = "";
-      if (input.name.includes("track")) {
-        input.value = String(Number(value) + 1);
-      }
       const [inputName, inputNumber] = input.name.split("_");
+      const hasTrack = track !== null;
+
+      switch (inputName) {
+        case "song":
+          if (hasTrack && track.hasOwnProperty("song")) {
+            input.value = track.song;
+          }
+          break;
+        case "duration":
+          if (hasTrack && track.hasOwnProperty("duration")) {
+            input.value = track.duration !== null ? toMMSS(track.duration) : "";
+          }
+          break;
+        case "track":
+          const { value } = input;
+          input.value = String(Number(value) + 1);
+          break;
+      }
       input.name = inputName + "_" + String(Number(inputNumber) + 1);
     });
-
     tbody.appendChild(lastTrack);
   } else {
     alert("too many tracks");
   }
+};
+
+const toMMSS = (duration) => {
+  const mmSS = new Date(duration * 1000).toISOString().slice(14, 19);
+  return mmSS.substring(0, 1) === "0" ? mmSS.slice(1, 5) : mmSS;
 };
 
 const sendAlbum = async (event) => {
@@ -335,6 +391,7 @@ const sendAlbum = async (event) => {
 
 const addPhoto = (event) => {
   const photo = event.target.files[0];
+
   const img = document.getElementById("photo-preview");
   img.src = URL.createObjectURL(photo);
 };

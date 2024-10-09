@@ -98,16 +98,18 @@
         <button type="button" onclick="removeSong()">remove track</button>
         <hr />
         <p>add a photo:</p>
-        <input
-          type="file"
-          accept="image/*"
-          name="photo"
-          id="photo"
-          onchange="addPhoto(event)"
-          required
-        />
-        <img id="photo-preview" />
-        <hr />
+
+        <div class="img-block">
+          <input
+            type="file"
+            accept="image/*"
+            name="photo"
+            id="photo"
+            onchange="addPhoto(event)"
+            required
+          />
+          <img id="photo-preview" />
+        </div>
         <button type="submit">Submit</button>
       </fieldset>
     </form>
