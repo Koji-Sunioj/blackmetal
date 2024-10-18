@@ -318,6 +318,10 @@ body {
   padding-bottom: 20px;
 }
 
+#hidden-action {
+  display: none;
+}
+
 fieldset {
   border:0 none;
   padding: 0px;

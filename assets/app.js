@@ -159,7 +159,7 @@ const renderAlbumForm = async () => {
 
   const response = await fetch("/api/admin/artists");
   const { artists } = await response.json();
-  const artistSelect = document.querySelector("[name=artist]");
+  const artistSelect = document.querySelector("[name=artist_id]");
   artists.forEach((artist) => {
     const { name, artist_id } = artist;
     const newOption = element("option");
@@ -168,18 +168,24 @@ const renderAlbumForm = async () => {
     artistSelect.appendChild(newOption);
   });
 
+  const h1 = document.getElementById("manange-album-title");
+
   switch (action) {
     case "edit":
       const albumParam = url.get("album");
       const artistName = url.get("artist");
       checkAndRedirect([albumParam, artistName], "?action=new");
       const {
-        album: { name, photo },
+        album: { name, photo, title, artist_id, album_id },
         album,
         songs,
       } = await fetch(`/api/albums/${artistName}/${albumParam}`).then(
         (response) => response.json()
       );
+
+      h1.innerText = `Edit ${title} by ${name}`;
+      const existingAlbumID = document.getElementById("existing-album-id");
+      existingAlbumID.value = album_id;
 
       ["title", "release_year", "price"].forEach((key) => {
         const input = document.querySelector(`[name=${key}]`);
@@ -188,7 +194,8 @@ const renderAlbumForm = async () => {
 
       const existingOption = Array.from(
         artistSelect.querySelectorAll("option")
-      ).find((option) => option.innerText === name);
+      ).find((option) => Number(option.value) === artist_id);
+
       artistSelect.value = existingOption.value;
 
       const img = document.getElementById("photo-preview");
@@ -217,9 +224,11 @@ const renderAlbumForm = async () => {
       });
       break;
     case "new":
-      console.log("asd");
+      h1.innerText = "Create a album";
       break;
   }
+
+  document.getElementById(action + "-radio").checked = true;
 };
 
 const albumParams = (url) => {
@@ -370,22 +379,22 @@ const sendAlbum = async (event) => {
     }
   }
 
-  const token = document.cookie.match(/token=(.*$)/)[1];
-
   const response = await fetch("/api/admin/albums", {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
     body: currentForm,
   });
 
-  const { detail } = await response.json();
+  const { detail, title, name } = await response.json();
 
   fieldSet.removeAttribute("disabled");
 
   alert(detail);
 
-  if (response.status === 200) {
-    location.reload();
+  if (response.status === 200 && title !== undefined && name !== undefined) {
+    const urlParams = `?action=edit&album=${toUrlCase(
+      title
+    )}&artist=${toUrlCase(name)}`;
+    window.location.search = urlParams;
   }
 };
 
