@@ -68,8 +68,6 @@ select {
     width: 20vw;
   } 
 
-  
-
   .query-item > label {
     display: none;
   }
@@ -208,10 +206,6 @@ label {
   border-bottom-color:red;
 }
 
-
-
-
-
 input:hover,
 input:focus,
 button:hover,
@@ -314,7 +308,7 @@ body {
 .action-group {
   display: flex;
   flex-direction: row;
-  gap: 10px;
+  gap: 5px;
   padding-bottom: 20px;
 }
 

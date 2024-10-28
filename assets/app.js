@@ -30,7 +30,7 @@ const renderAdminView = async () => {
       const { page, sort, direction, query } = albumParams(url);
       checkAndRedirect(
         [page, sort, direction],
-        "?view=albums&page=1&sort=created&direction=descending"
+        "?view=albums&page=1&sort=modified&direction=descending"
       );
       const searchParam = query === null ? "" : `&query=${query}`;
       const apiUrl = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
@@ -49,7 +49,7 @@ const renderAdminView = async () => {
         "stock",
         "release year",
         "price",
-        "created",
+        "modified",
       ].forEach((value) => {
         const newHeader = element("td");
         newHeader.innerText = value;
@@ -222,6 +222,16 @@ const renderAlbumForm = async () => {
       Object.keys(songs).forEach((track, n) => {
         n !== 0 && addSong(songs[track]);
       });
+
+      const actionGroup = document.querySelector(".action-group");
+      const deleteButton = element("button");
+      deleteButton.setAttribute("type", "button");
+      deleteButton.onclick = () => {
+        deleteAlbum(album_id);
+      };
+      deleteButton.innerText = "Delete";
+      actionGroup.appendChild(deleteButton);
+
       break;
     case "new":
       h1.innerText = "Create a album";
@@ -229,6 +239,21 @@ const renderAlbumForm = async () => {
   }
 
   document.getElementById(action + "-radio").checked = true;
+};
+
+const deleteAlbum = async (album_id) => {
+  const deletePrompt = prompt(
+    "are you sure you want to delete this album? type 'yes' or 'no'"
+  );
+  if (deletePrompt.trim() == "yes") {
+    const response = await fetch(`/api/admin/albums/${album_id}`, {
+      method: "Delete",
+    });
+    const { status } = response;
+    const { detail } = await response.json();
+    alert(detail);
+    status === 200 && window.location.replace("/admin/");
+  }
 };
 
 const albumParams = (url) => {
@@ -260,7 +285,7 @@ const changeView = async (event) => {
       urlParams = "?view=add";
       break;
     case "albums":
-      urlParams = "?view=albums&page=1&sort=created&direction=descending";
+      urlParams = "?view=albums&page=1&sort=modified&direction=descending";
       break;
     case "artists":
       urlParams = "?view=artists";
@@ -340,11 +365,13 @@ const addSong = (track = null) => {
 
       switch (inputName) {
         case "song":
+          input.value = "";
           if (hasTrack && track.hasOwnProperty("song")) {
             input.value = track.song;
           }
           break;
         case "duration":
+          input.value = "";
           if (hasTrack && track.hasOwnProperty("duration")) {
             input.value = track.duration !== null ? toMMSS(track.duration) : "";
           }
@@ -383,6 +410,7 @@ const sendAlbum = async (event) => {
     method: "POST",
     body: currentForm,
   });
+  const { status } = response;
 
   const { detail, title, name } = await response.json();
 
@@ -390,7 +418,7 @@ const sendAlbum = async (event) => {
 
   alert(detail);
 
-  if (response.status === 200 && title !== undefined && name !== undefined) {
+  if (status === 200 && title !== undefined && name !== undefined) {
     const urlParams = `?action=edit&album=${toUrlCase(
       title
     )}&artist=${toUrlCase(name)}`;
