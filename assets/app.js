@@ -625,7 +625,9 @@ const renderAlbum = async () => {
   const artist_name = noSpaces.match(artistPattern)[0],
     album_title = noSpaces.match(albumPattern)[0];
 
-  const response = await fetch(`/api/albums/${artist_name}/${album_title}`);
+  const response = await fetch(
+    `/api/albums/${artist_name}/${album_title}?cart=get`
+  );
   const { album, songs, cart } = await response.json();
 
   document.title += ` ${album.name} - ${album.title}`;
@@ -704,7 +706,7 @@ const renderAlbum = async () => {
     table.appendChild(row);
   });
 
-  if (cart !== null) {
+  if (cart !== undefined) {
     const [cartInfo, removeBtn] = elements(["i", "button"]);
 
     cartInfo.id = "cart-info";
