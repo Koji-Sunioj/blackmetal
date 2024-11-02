@@ -650,6 +650,7 @@ const renderAlbum = async () => {
 
       switch (info) {
         case "album_id":
+        case "artist_id":
           break;
         case "name":
           paragraph.innerText = `${text}: `;
