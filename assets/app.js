@@ -82,7 +82,7 @@ const renderAdminView = async () => {
               editLink.innerText = album[key];
               newCell.appendChild(editLink);
               break;
-            case "created":
+            case "modified":
               const utcDate = new Date(`${album[key]} UTC`);
               newCell.innerText = utcToLocale(utcDate);
               break;
@@ -124,12 +124,10 @@ const renderPages = (pages, sort, direction, searchParam, hasView = false) => {
 };
 
 const utcToLocale = (date) => {
-  const hour = date.getHours();
-  const minutes = date.getMinutes();
   const year = date.getFullYear();
   const day = date.getDate();
   const month = date.getMonth() + 1;
-  return `${day}.${month}.${year} ${hour}:${minutes}`;
+  return `${day}.${month}.${year} ${date.toTimeString().substring(0, 5)}`;
 };
 
 const rendeArtistForm = async () => {
