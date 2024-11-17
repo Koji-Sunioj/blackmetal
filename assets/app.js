@@ -1,3 +1,30 @@
+const submitQuery = (event) => {
+  event.preventDefault();
+  const {
+    location: { search },
+  } = window;
+  const {
+    target: {
+      sort: { value: sort },
+      query: { value: query },
+      direction: { value: direction },
+    },
+  } = event;
+
+  const url = new URLSearchParams(search);
+  url.set("sort", sort);
+  url.set("direction", direction);
+
+  if (query.length > 0 && url.get("query") !== query) {
+    url.set("query", query);
+    url.set("page", "1");
+  } else if (query.length === 0 && url.get("query") !== null) {
+    url.delete("query");
+  }
+
+  window.location.search = url;
+};
+
 //admin
 
 const renderAdminView = async () => {
@@ -24,81 +51,107 @@ const renderAdminView = async () => {
       });
       break;
 
+    case "artists":
+      {
+        const sortDiv = document.getElementById("sort-query");
+        sortDiv.style.display = "none";
+
+        const searchForm = document.getElementById("search-form");
+        searchForm.style.display = "flex";
+        const { page, sort, direction, query } = albumParams(url);
+
+        checkAndRedirect(
+          [page, sort, direction],
+          "?view=artists&page=1&sort=name&direction=descending"
+        );
+
+        document.querySelector("[name='query']").value = query;
+        document.querySelector("[name='direction']").value = direction;
+        document.querySelector("[name='sort']").value = sort;
+
+        console.log(page, sort, direction, query);
+      }
+      break;
+
     case "albums":
-      const searchForm = document.getElementById("search-form");
-      searchForm.style.display = "flex";
-      const { page, sort, direction, query } = albumParams(url);
-      checkAndRedirect(
-        [page, sort, direction],
-        "?view=albums&page=1&sort=modified&direction=descending"
-      );
-      const searchParam = query === null ? "" : `&query=${query}`;
-      const apiUrl = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
-      const response = await fetch(apiUrl);
-      const { albums, pages } = await response.json();
+      {
+        const searchForm = document.getElementById("search-form");
+        searchForm.style.display = "flex";
+        const { page, sort, direction, query } = albumParams(url);
 
-      document.querySelector("[name='query']").value = query;
-      document.querySelector("[name='direction']").value = direction;
-      document.querySelector("[name='sort']").value = sort;
+        checkAndRedirect(
+          [page, sort, direction],
+          "?view=albums&page=1&sort=modified&direction=descending"
+        );
 
-      const [table, tableBody, header] = elements(["table", "tbody", "tr"]);
-      [
-        "photo",
-        "title",
-        "name",
-        "stock",
-        "release year",
-        "price",
-        "modified",
-      ].forEach((value) => {
-        const newHeader = element("td");
-        newHeader.innerText = value;
-        header.appendChild(newHeader);
-      });
+        document.querySelector("[name='query']").value = query;
+        document.querySelector("[name='direction']").value = direction;
+        document.querySelector("[name='sort']").value = sort;
 
-      tableBody.appendChild(header);
+        const searchParam = query === null ? "" : `&query=${query}`;
+        const apiUrl = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
+        const response = await fetch(apiUrl);
+        const { albums, pages } = await response.json();
 
-      table.classList.add("dispatched-table");
-
-      albums.forEach((album) => {
-        const newRow = element("tr");
-        Object.keys(album).forEach((key) => {
-          const newCell = element("td");
-          switch (key) {
-            case "photo":
-              const image = element("img");
-              image.src = `/common/${album[key]}`;
-              image.classList.add("table-img");
-              newCell.appendChild(image);
-              break;
-            case "title":
-              const editLink = element("a");
-              editLink.setAttribute(
-                "href",
-                `manage-album?action=edit&album=${toUrlCase(
-                  album[key]
-                )}&artist=${toUrlCase(album["name"])}`
-              );
-              editLink.innerText = album[key];
-              newCell.appendChild(editLink);
-              break;
-            case "modified":
-              const utcDate = new Date(`${album[key]} UTC`);
-              newCell.innerText = utcToLocale(utcDate);
-              break;
-            default:
-              newCell.innerText = album[key];
-              break;
-          }
-
-          newRow.appendChild(newCell);
+        const [table, tableBody, header] = elements(["table", "tbody", "tr"]);
+        [
+          "photo",
+          "title",
+          "name",
+          "stock",
+          "release year",
+          "price",
+          "modified",
+        ].forEach((value) => {
+          const newHeader = element("td");
+          newHeader.innerText = value;
+          header.appendChild(newHeader);
         });
-        tableBody.appendChild(newRow);
-      });
-      table.appendChild(tableBody);
-      viewDiv.appendChild(table);
 
-      renderPages(pages, sort, direction, searchParam, true);
+        tableBody.appendChild(header);
+
+        table.classList.add("dispatched-table");
+
+        albums.forEach((album) => {
+          const newRow = element("tr");
+          Object.keys(album).forEach((key) => {
+            const newCell = element("td");
+            switch (key) {
+              case "photo":
+                const image = element("img");
+                image.src = `/common/${album[key]}`;
+                image.classList.add("table-img");
+                newCell.appendChild(image);
+                break;
+              case "title":
+                const editLink = element("a");
+                editLink.setAttribute(
+                  "href",
+                  `manage-album?action=edit&album=${toUrlCase(
+                    album[key]
+                  )}&artist=${toUrlCase(album["name"])}`
+                );
+                editLink.innerText = album[key];
+                newCell.appendChild(editLink);
+                break;
+              case "modified":
+                const utcDate = new Date(`${album[key]} UTC`);
+                newCell.innerText = utcToLocale(utcDate);
+                break;
+              default:
+                newCell.innerText = album[key];
+                break;
+            }
+
+            newRow.appendChild(newCell);
+          });
+          tableBody.appendChild(newRow);
+        });
+        table.appendChild(tableBody);
+        viewDiv.appendChild(table);
+
+        renderPages(pages, sort, direction, searchParam, true);
+      }
       break;
   }
 };
@@ -112,7 +165,6 @@ const renderPages = (pages, sort, direction, searchParam, hasView = false) => {
   [...Array(pages).keys()].forEach((dbPage) => {
     const htmlRef = dbPage + 1;
     const pageUrl = `?${firstParam}page=${htmlRef}&sort=${sort}&direction=${direction}${searchParam}`;
-    console.log(pageUrl);
     const anchor = element("a");
     anchor.setAttribute("href", pageUrl);
     anchor.innerHTML = htmlRef;
@@ -250,7 +302,10 @@ const deleteAlbum = async (album_id) => {
     const { status } = response;
     const { detail } = await response.json();
     alert(detail);
-    status === 200 && window.location.replace("/admin/");
+    status === 200 &&
+      window.location.replace(
+        "/admin/?view=albums&page=1&sort=modified&direction=descending"
+      );
   }
 };
 
@@ -286,7 +341,7 @@ const changeView = async (event) => {
       urlParams = "?view=albums&page=1&sort=modified&direction=descending";
       break;
     case "artists":
-      urlParams = "?view=artists";
+      urlParams = "?view=artists&page=1&sort=name&direction=descending";
       break;
   }
 
@@ -513,7 +568,6 @@ const renderAlbumTable = (albums) => {
   tBody.appendChild(tableHeaderRow);
 
   albums.forEach((album) => {
-    console.log("asd");
     const row = element("tr");
 
     Object.keys(album).forEach((key) => {
@@ -818,33 +872,6 @@ const renderAlbumTiles = (albums) => {
 
 const toUrlCase = (value) => {
   return value.toLowerCase().replace(/\s/g, "-");
-};
-
-const submitQuery = (event) => {
-  event.preventDefault();
-  const {
-    location: { search },
-  } = window;
-  const {
-    target: {
-      sort: { value: sort },
-      query: { value: query },
-      direction: { value: direction },
-    },
-  } = event;
-
-  const url = new URLSearchParams(search);
-  url.set("sort", sort);
-  url.set("direction", direction);
-
-  if (query.length > 0 && url.get("query") !== query) {
-    url.set("query", query);
-    url.set("page", "1");
-  } else if (query.length === 0 && url.get("query") !== null) {
-    url.delete("query");
-  }
-
-  window.location.search = url;
 };
 
 const logOut = () => {
