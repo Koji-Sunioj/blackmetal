@@ -76,8 +76,12 @@ const renderAdminView = async () => {
 
     case "artists":
       {
-        const sortDiv = document.getElementById("sort-query");
-        sortDiv.style.display = "none";
+        const [nameOption, modifiedOption] = elements(["option", "option"]);
+        nameOption.innerHTML = nameOption.value = "name";
+        modifiedOption.innerHTML = modifiedOption.value = "modified";
+        const sortInput = document.querySelector("[name=sort]");
+        sortInput.replaceChildren(nameOption, modifiedOption);
+
         showSearchBar(
           "?view=artists&page=1&sort=name&direction=ascending",
           viewParams
@@ -88,10 +92,12 @@ const renderAdminView = async () => {
         const response = await fetch(apiUrl);
         const { artists, pages } = await response.json();
 
-        console.log(artists, pages);
-
         const [table, tableBody, header] = elements(["table", "tbody", "tr"]);
-        putTableHeaders(["name", "biography", "albums"], header, tableBody);
+        putTableHeaders(
+          ["name", "biography", "modified", "albums"],
+          header,
+          tableBody
+        );
         table.classList.add("dispatched-table");
 
         artists.forEach((artist) => {
@@ -109,6 +115,10 @@ const renderAdminView = async () => {
                 );
                 editLink.innerText = artist[key];
                 newCell.appendChild(editLink);
+                break;
+              case "modified":
+                const utcDate = new Date(`${artist[key]} UTC`);
+                newCell.innerText = utcToLocale(utcDate);
                 break;
               default:
                 newCell.innerText = artist[key];
