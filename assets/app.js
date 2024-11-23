@@ -27,6 +27,28 @@ const submitQuery = (event) => {
 
 //admin
 
+const showSearchBar = (fallBack, params) => {
+  const { page, sort, direction, query } = params;
+
+  const searchForm = document.getElementById("search-form");
+  searchForm.style.display = "flex";
+
+  checkAndRedirect([page, sort, direction], fallBack);
+
+  document.querySelector("[name='query']").value = query;
+  document.querySelector("[name='direction']").value = direction;
+  document.querySelector("[name='sort']").value = sort;
+};
+
+const putTableHeaders = (headers, header, tableBody) => {
+  headers.forEach((value) => {
+    const newHeader = element("td");
+    newHeader.innerText = value;
+    header.appendChild(newHeader);
+  });
+  tableBody.appendChild(header);
+};
+
 const renderAdminView = async () => {
   const {
     location: { search },
@@ -38,6 +60,7 @@ const renderAdminView = async () => {
 
   document.getElementById(view + "-radio").checked = true;
   const viewDiv = document.getElementById("admin-view");
+  const viewParams = ({ page, sort, direction, query } = albumParams(url));
 
   switch (view) {
     case "add":
@@ -55,38 +78,61 @@ const renderAdminView = async () => {
       {
         const sortDiv = document.getElementById("sort-query");
         sortDiv.style.display = "none";
-
-        const searchForm = document.getElementById("search-form");
-        searchForm.style.display = "flex";
-        const { page, sort, direction, query } = albumParams(url);
-
-        checkAndRedirect(
-          [page, sort, direction],
-          "?view=artists&page=1&sort=name&direction=descending"
+        showSearchBar(
+          "?view=artists&page=1&sort=name&direction=ascending",
+          viewParams
         );
 
-        document.querySelector("[name='query']").value = query;
-        document.querySelector("[name='direction']").value = direction;
-        document.querySelector("[name='sort']").value = sort;
+        const searchParam = query === null ? "" : `&query=${query}`;
+        const apiUrl = `/api/admin/artists?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
+        const response = await fetch(apiUrl);
+        const { artists, pages } = await response.json();
 
-        console.log(page, sort, direction, query);
+        console.log(artists, pages);
+
+        const [table, tableBody, header] = elements(["table", "tbody", "tr"]);
+        putTableHeaders(["name", "biography", "albums"], header, tableBody);
+        table.classList.add("dispatched-table");
+
+        artists.forEach((artist) => {
+          const newRow = element("tr");
+          Object.keys(artist).forEach((key) => {
+            const newCell = element("td");
+            switch (key) {
+              case "name":
+                const editLink = element("a");
+                editLink.setAttribute(
+                  "href",
+                  `manage-artist?action=edit&artist=${toUrlCase(
+                    artist["name"]
+                  )}`
+                );
+                editLink.innerText = artist[key];
+                newCell.appendChild(editLink);
+                break;
+              default:
+                newCell.innerText = artist[key];
+                break;
+            }
+
+            newRow.appendChild(newCell);
+          });
+          tableBody.appendChild(newRow);
+        });
+
+        table.appendChild(tableBody);
+        viewDiv.appendChild(table);
+
+        renderPages(pages, sort, direction, searchParam, "artists");
       }
       break;
 
     case "albums":
       {
-        const searchForm = document.getElementById("search-form");
-        searchForm.style.display = "flex";
-        const { page, sort, direction, query } = albumParams(url);
-
-        checkAndRedirect(
-          [page, sort, direction],
-          "?view=albums&page=1&sort=modified&direction=descending"
+        showSearchBar(
+          "?view=albums&page=1&sort=modified&direction=descending",
+          viewParams
         );
-
-        document.querySelector("[name='query']").value = query;
-        document.querySelector("[name='direction']").value = direction;
-        document.querySelector("[name='sort']").value = sort;
 
         const searchParam = query === null ? "" : `&query=${query}`;
         const apiUrl = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
@@ -94,22 +140,19 @@ const renderAdminView = async () => {
         const { albums, pages } = await response.json();
 
         const [table, tableBody, header] = elements(["table", "tbody", "tr"]);
-        [
-          "photo",
-          "title",
-          "name",
-          "stock",
-          "release year",
-          "price",
-          "modified",
-        ].forEach((value) => {
-          const newHeader = element("td");
-          newHeader.innerText = value;
-          header.appendChild(newHeader);
-        });
-
-        tableBody.appendChild(header);
-
+        putTableHeaders(
+          [
+            "photo",
+            "title",
+            "name",
+            "stock",
+            "release year",
+            "price",
+            "modified",
+          ],
+          header,
+          tableBody
+        );
         table.classList.add("dispatched-table");
 
         albums.forEach((album) => {
@@ -150,14 +193,14 @@ const renderAdminView = async () => {
         table.appendChild(tableBody);
         viewDiv.appendChild(table);
 
-        renderPages(pages, sort, direction, searchParam, true);
+        renderPages(pages, sort, direction, searchParam, "albums");
       }
       break;
   }
 };
 
-const renderPages = (pages, sort, direction, searchParam, hasView = false) => {
-  const firstParam = hasView ? "view=albums&" : "";
+const renderPages = (pages, sort, direction, searchParam, view = null) => {
+  const firstParam = view !== null ? `view=${view}&` : "";
 
   const pageDiv = document.getElementById("pages");
   pageDiv.style.display = "block";
@@ -180,22 +223,6 @@ const utcToLocale = (date) => {
   const day = date.getDate();
   const month = date.getMonth() + 1;
   return `${day}.${month}.${year} ${date.toTimeString().substring(0, 5)}`;
-};
-
-const rendeArtistForm = async () => {
-  const response = await fetch("/api/admin/artists");
-  const { artists } = await response.json();
-
-  const artistSelect = document.querySelector("[name='artists']");
-  artists.forEach((artist) => {
-    const { name } = artist;
-    const newOption = element("option");
-    newOption.innerHTML = name;
-    newOption.value = name;
-    newOption.setAttribute("disabled", "true");
-    artistSelect.appendChild(newOption);
-  });
-  artistSelect.size = artists.length;
 };
 
 const renderAlbumForm = async () => {
@@ -341,7 +368,7 @@ const changeView = async (event) => {
       urlParams = "?view=albums&page=1&sort=modified&direction=descending";
       break;
     case "artists":
-      urlParams = "?view=artists&page=1&sort=name&direction=descending";
+      urlParams = "?view=artists&page=1&sort=name&direction=ascending";
       break;
   }
 
@@ -554,18 +581,16 @@ const checkOut = async () => {
 };
 
 const renderAlbumTable = (albums) => {
-  const [table, tableHeaderRow, tBody] = elements(["table", "tr", "tbody"]);
+  const [table, tableBody, header] = elements(["table", "tbody", "tr"]);
+
+  putTableHeaders(
+    ["cover", "title", "artist", "quantity", "price"],
+    header,
+    tableBody
+  );
 
   table.classList.add("dispatched-table");
-
-  ["cover", "title", "artist", "quantity", "price"].forEach((header) => {
-    const td = element("td");
-    td.innerText = header;
-    tableHeaderRow.appendChild(td);
-  });
-
-  table.appendChild(tBody);
-  tBody.appendChild(tableHeaderRow);
+  table.appendChild(tableBody);
 
   albums.forEach((album) => {
     const row = element("tr");
@@ -610,7 +635,7 @@ const renderAlbumTable = (albums) => {
       }
       row.appendChild(td);
     });
-    tBody.appendChild(row);
+    tableBody.appendChild(row);
   });
 
   return table;
@@ -640,24 +665,15 @@ const renderAlbums = async () => {
   const {
     location: { search },
   } = window;
+  const url = new URLSearchParams(search);
+  const viewParams = ({ page, sort, direction, query } = albumParams(url));
 
-  const { page, sort, direction, query } = albumParams(
-    new URLSearchParams(search)
-  );
-
-  checkAndRedirect(
-    [page, sort, direction],
-    "?page=1&sort=name&direction=ascending"
-  );
+  showSearchBar("?page=1&sort=name&direction=ascending", viewParams);
 
   const searchParam = query === null ? "" : `&query=${query}`;
-  const url = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
+  const fetchUrl = `/api/albums?page=${page}&sort=${sort}&direction=${direction}${searchParam}`;
 
-  document.querySelector("[name='query']").value = query;
-  document.querySelector("[name='direction']").value = direction;
-  document.querySelector("[name='sort']").value = sort;
-
-  const { albums, pages } = await fetch(url).then((response) =>
+  const { albums, pages } = await fetch(fetchUrl).then((response) =>
     response.json()
   );
 
