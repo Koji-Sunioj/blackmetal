@@ -235,6 +235,35 @@ const utcToLocale = (date) => {
   return `${day}.${month}.${year} ${date.toTimeString().substring(0, 5)}`;
 };
 
+const renderArtistForm = async () => {
+  const {
+    location: { search },
+  } = window;
+  const url = new URLSearchParams(search);
+  const action = url.get("action");
+  checkAndRedirect([action], "?action=new");
+  const h1 = document.getElementById("manange-artist-title");
+
+  switch (action) {
+    case "edit":
+      const artistName = url.get("artist");
+      checkAndRedirect([artistName], "?action=new");
+      const response = await fetch(`/api/artist/${artistName}?view=admin`);
+      const {
+        artist: { name, bio },
+      } = await response.json();
+      const bioInput = document.querySelector("[name=biography]");
+      const nameInput = document.querySelector("[name=artist]");
+      h1.innerHTML = `Edit artist ${name}`;
+      bioInput.value = bio;
+      nameInput.value = name;
+      break;
+    case "new":
+      h1.innerHTML = `Create a new artist`;
+      break;
+  }
+};
+
 const renderAlbumForm = async () => {
   const {
     location: { search },
@@ -657,7 +686,7 @@ const renderArtist = async () => {
   } = window;
 
   const artist = pathname.split("/")[2];
-  const url = `/api/artist/${artist}`;
+  const url = `/api/artist/${artist}?view=user`;
   const response = await fetch(url);
   const {
     artist: { name, albums, bio },
@@ -897,7 +926,7 @@ const renderAlbumTiles = (albums) => {
 };
 
 const toUrlCase = (value) => {
-  return value.toLowerCase().replace(/\s/g, "-");
+  return encodeURIComponent(value.toLowerCase().replace(/\s/g, "-"));
 };
 
 const logOut = () => {

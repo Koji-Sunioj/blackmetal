@@ -7,7 +7,7 @@
     <link href="/assets/app.css" rel="stylesheet" />
     <meta name="viewport" content="width=device-width" />
   </head>
-  <body onload="rendeArtistForm()" class="shop">
+  <body onload="renderArtistForm()" class="shop">
     <div id="nav">
       <a href="/">Homepage</a>
       <a href="/albums/">Albums</a>
@@ -15,21 +15,8 @@
       <a href="/admin">Admin</a>
     </div>
     <hr />
-    <h1>Manage artist</h1>
+    <h1 id="manange-artist-title"></h1>
     <form>
-      <hr />
-      <p>actions:</p>
-      <div>
-        <div>
-          <label for="dewey">add</label>
-          <input type="radio" id="dewey" name="drone" checked />
-        </div>
-        <div>
-          <label for="louie">edit</label>
-          <input type="radio" id="louie" name="drone" />
-        </div>
-      </div>
-      <br />
       <hr />
       <p>details:</p>
       <div class="form-field">
@@ -42,15 +29,18 @@
           required
         />
       </div>
+      <br />
       <div class="form-text-area">
         <label for="biography">biography:</label>
         <textarea
           name="biography"
           placeholder="Mgla (pronounced 'mgwa') means 'Fog' in Polish. Initially founded as a studio project by singer and multi-instrumentalist M. After the release of With Hearts Toward None in 2012, Mgła started to play live shows, employing a live lineup (apart from the official drummer Darkside); frontman M. sings and plays rhythm guitar."
+          rows="5"
         ></textarea>
       </div>
-      <br />
-      <hr />
+      <div class="action-group">
+        <button type="submit">Submit</button>
+      </div>
     </form>
   </body>
 </html>
