@@ -262,6 +262,66 @@ const renderArtistForm = async () => {
       h1.innerHTML = `Create a new artist`;
       break;
   }
+
+  document.getElementById(action + "-radio").checked = true;
+};
+
+const sendAlbum = async (event) => {
+  event.preventDefault();
+  const fieldSet = document.querySelector("fieldset");
+  const currentForm = new FormData(event.target);
+  fieldSet.disabled = true;
+
+  for (var pair of currentForm.entries()) {
+    if (typeof pair[1] === "string") {
+      currentForm.set(pair[0], pair[1].trim());
+    }
+  }
+
+  const response = await fetch("/api/admin/albums", {
+    method: "POST",
+    body: currentForm,
+  });
+  const { status } = response;
+  const { detail, title, name } = await response.json();
+  fieldSet.disabled = true;
+
+  alert(detail);
+
+  if (status === 200 && title !== undefined && name !== undefined) {
+    const urlParams = `?action=edit&album=${toUrlCase(
+      title
+    )}&artist=${toUrlCase(name)}`;
+    window.location.search = urlParams;
+  }
+};
+
+const sendArtist = async (event) => {
+  event.preventDefault();
+  const currentForm = new FormData(event.target);
+  const fieldSet = document.querySelector("fieldset");
+  fieldSet.disabled = true;
+
+  for (var pair of currentForm.entries()) {
+    if (typeof pair[1] === "string") {
+      currentForm.set(pair[0], pair[1].trim());
+    }
+  }
+
+  const response = await fetch("/api/admin/artists", {
+    method: "POST",
+    body: currentForm,
+  });
+  const { status } = response;
+  const { detail, name } = await response.json();
+  fieldSet.disabled = false;
+
+  alert(detail);
+
+  if (status === 200 && name !== undefined) {
+    const urlParams = `?action=edit&artist=${toUrlCase(name)}`;
+    window.location.search = urlParams;
+  }
 };
 
 const renderAlbumForm = async () => {
@@ -511,38 +571,6 @@ const addSong = (track = null) => {
 const toMMSS = (duration) => {
   const mmSS = new Date(duration * 1000).toISOString().slice(14, 19);
   return mmSS.substring(0, 1) === "0" ? mmSS.slice(1, 5) : mmSS;
-};
-
-const sendAlbum = async (event) => {
-  const fieldSet = document.querySelector("fieldset");
-  event.preventDefault();
-
-  const currentForm = new FormData(event.target);
-
-  for (var pair of currentForm.entries()) {
-    if (typeof pair[1] === "string") {
-      currentForm.set(pair[0], pair[1].trim());
-    }
-  }
-
-  const response = await fetch("/api/admin/albums", {
-    method: "POST",
-    body: currentForm,
-  });
-  const { status } = response;
-
-  const { detail, title, name } = await response.json();
-
-  fieldSet.removeAttribute("disabled");
-
-  alert(detail);
-
-  if (status === 200 && title !== undefined && name !== undefined) {
-    const urlParams = `?action=edit&album=${toUrlCase(
-      title
-    )}&artist=${toUrlCase(name)}`;
-    window.location.search = urlParams;
-  }
 };
 
 const addPhoto = (event) => {

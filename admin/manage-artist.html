@@ -16,31 +16,58 @@
     </div>
     <hr />
     <h1 id="manange-artist-title"></h1>
-    <form>
-      <hr />
-      <p>details:</p>
-      <div class="form-field">
-        <label for="artist">artist name:</label>
-        <input
-          type="text"
-          name="artist"
-          placeholder="Mgla"
-          minlength="4"
-          required
-        />
-      </div>
-      <br />
-      <div class="form-text-area">
-        <label for="biography">biography:</label>
-        <textarea
-          name="biography"
-          placeholder="Mgla (pronounced 'mgwa') means 'Fog' in Polish. Initially founded as a studio project by singer and multi-instrumentalist M. After the release of With Hearts Toward None in 2012, Mgła started to play live shows, employing a live lineup (apart from the official drummer Darkside); frontman M. sings and plays rhythm guitar."
-          rows="5"
-        ></textarea>
-      </div>
-      <div class="action-group">
-        <button type="submit">Submit</button>
-      </div>
+    <form onsubmit="sendArtist(event)">
+      <fieldset>
+        <div id="hidden-action">
+          <div>
+            <input
+              type="radio"
+              id="new-radio"
+              name="action"
+              value="new"
+              readonly="true"
+            />
+          </div>
+          <div>
+            <input
+              type="radio"
+              id="edit-radio"
+              name="action"
+              value="edit"
+              readonly="true"
+            />
+          </div>
+          <div>
+            <input type="number" id="existing-artist-id" name="artist_id" />
+          </div>
+        </div>
+        <hr />
+        <p>details:</p>
+        <div class="form-field">
+          <label for="artist">artist name:</label>
+          <input
+            type="text"
+            name="artist"
+            placeholder="Mgla"
+            minlength="4"
+            required
+          />
+        </div>
+        <br />
+        <div class="form-text-area">
+          <label for="biography">biography:</label>
+          <textarea
+            name="biography"
+            placeholder="Mgla (pronounced 'mgwa') means 'Fog' in Polish. Initially founded as a studio project by singer and multi-instrumentalist M. After the release of With Hearts Toward None in 2012, Mgła started to play live shows, employing a live lineup (apart from the official drummer Darkside); frontman M. sings and plays rhythm guitar."
+            rows="5"
+            required
+            minlength="10"
+          ></textarea>
+        </div>
+        <div class="action-group">
+          <button type="submit">Submit</button>
+        </div>
+      </fieldset>
     </form>
   </body>
 </html>
