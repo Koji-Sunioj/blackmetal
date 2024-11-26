@@ -250,13 +250,12 @@ const renderArtistForm = async () => {
       checkAndRedirect([artistName], "?action=new");
       const response = await fetch(`/api/artist/${artistName}?view=admin`);
       const {
-        artist: { name, bio },
+        artist: { name, bio, artist_id },
       } = await response.json();
-      const bioInput = document.querySelector("[name=biography]");
-      const nameInput = document.querySelector("[name=artist]");
+      document.getElementById("existing-artist-id").value = artist_id;
+      document.querySelector("[name=bio]").value = bio;
+      document.querySelector("[name=name]").value = name;
       h1.innerHTML = `Edit artist ${name}`;
-      bioInput.value = bio;
-      nameInput.value = name;
       break;
     case "new":
       h1.innerHTML = `Create a new artist`;
@@ -360,8 +359,7 @@ const renderAlbumForm = async () => {
       );
 
       h1.innerText = `Edit ${title} by ${name}`;
-      const existingAlbumID = document.getElementById("existing-album-id");
-      existingAlbumID.value = album_id;
+      document.getElementById("existing-album-id").value = album_id;
 
       ["title", "release_year", "price"].forEach((key) => {
         const input = document.querySelector(`[name=${key}]`);
@@ -467,7 +465,7 @@ const changeView = async (event) => {
       urlParams = "?view=albums&page=1&sort=modified&direction=descending";
       break;
     case "artists":
-      urlParams = "?view=artists&page=1&sort=name&direction=ascending";
+      urlParams = "?view=artists&page=1&sort=modified&direction=descending";
       break;
   }
 
