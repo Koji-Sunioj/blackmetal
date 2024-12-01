@@ -101,17 +101,18 @@ const renderAdminView = async () => {
         table.classList.add("dispatched-table");
 
         artists.forEach((artist) => {
+          const artistCopy = { ...artist };
+          delete artistCopy.artist_id;
+
           const newRow = element("tr");
-          Object.keys(artist).forEach((key) => {
+          Object.keys(artistCopy).forEach((key) => {
             const newCell = element("td");
             switch (key) {
               case "name":
                 const editLink = element("a");
                 editLink.setAttribute(
                   "href",
-                  `manage-artist?action=edit&artist=${toUrlCase(
-                    artist["name"]
-                  )}`
+                  `manage-artist?action=edit&artist_id=${artist["artist_id"]}`
                 );
                 editLink.innerText = artist[key];
                 newCell.appendChild(editLink);
@@ -166,8 +167,11 @@ const renderAdminView = async () => {
         table.classList.add("dispatched-table");
 
         albums.forEach((album) => {
+          const albumCopy = { ...album };
+          delete albumCopy.artist_id;
+
           const newRow = element("tr");
-          Object.keys(album).forEach((key) => {
+          Object.keys(albumCopy).forEach((key) => {
             const newCell = element("td");
             switch (key) {
               case "photo":
@@ -182,7 +186,7 @@ const renderAdminView = async () => {
                   "href",
                   `manage-album?action=edit&album=${toUrlCase(
                     album[key]
-                  )}&artist=${toUrlCase(album["name"])}`
+                  )}&artist_id=${album["artist_id"]}`
                 );
                 editLink.innerText = album[key];
                 newCell.appendChild(editLink);
@@ -246,9 +250,9 @@ const renderArtistForm = async () => {
 
   switch (action) {
     case "edit":
-      const artistName = url.get("artist");
+      const artistName = url.get("artist_id");
       checkAndRedirect([artistName], "?action=new");
-      const response = await fetch(`/api/artist/${artistName}?view=admin`);
+      const response = await fetch(`/api/artists/${artistName}?view=admin`);
       const {
         artist: { name, bio, artist_id },
       } = await response.json();
@@ -256,6 +260,15 @@ const renderArtistForm = async () => {
       document.querySelector("[name=bio]").value = bio;
       document.querySelector("[name=name]").value = name;
       h1.innerHTML = `Edit artist ${name}`;
+
+      const actionGroup = document.querySelector(".action-group");
+      const deleteButton = element("button");
+      deleteButton.setAttribute("type", "button");
+      deleteButton.onclick = () => {
+        deleteArtist(artist_id);
+      };
+      deleteButton.innerText = "Delete";
+      actionGroup.appendChild(deleteButton);
       break;
     case "new":
       h1.innerHTML = `Create a new artist`;
@@ -263,6 +276,24 @@ const renderArtistForm = async () => {
   }
 
   document.getElementById(action + "-radio").checked = true;
+};
+
+const deleteArtist = async (artist_id) => {
+  const deletePrompt = prompt(
+    "are you sure you want to delete this artist? type 'yes' or 'no'"
+  );
+  if (deletePrompt.trim() == "yes") {
+    const response = await fetch(`/api/admin/artists/${artist_id}`, {
+      method: "Delete",
+    });
+    const { status } = response;
+    const { detail } = await response.json();
+    alert(detail);
+    status === 200 &&
+      window.location.replace(
+        "/admin/?view=artists&page=1&sort=modified&direction=descending"
+      );
+  }
 };
 
 const sendAlbum = async (event) => {
@@ -282,16 +313,15 @@ const sendAlbum = async (event) => {
     body: currentForm,
   });
   const { status } = response;
-  const { detail, title, name } = await response.json();
-  fieldSet.disabled = true;
+  const { detail, artist_id, title } = await response.json();
+  fieldSet.disabled = false;
 
   alert(detail);
 
-  if (status === 200 && title !== undefined && name !== undefined) {
-    const urlParams = `?action=edit&album=${toUrlCase(
+  if (status === 200 && title !== undefined && artist_id !== undefined) {
+    window.location.search = `?action=edit&album=${toUrlCase(
       title
-    )}&artist=${toUrlCase(name)}`;
-    window.location.search = urlParams;
+    )}&artist_id=${artist_id}`;
   }
 };
 
@@ -312,13 +342,13 @@ const sendArtist = async (event) => {
     body: currentForm,
   });
   const { status } = response;
-  const { detail, name } = await response.json();
+  const { detail, artist_id } = await response.json();
   fieldSet.disabled = false;
 
   alert(detail);
 
   if (status === 200 && name !== undefined) {
-    const urlParams = `?action=edit&artist=${toUrlCase(name)}`;
+    const urlParams = `?action=edit&artist_id=${artist_id}`;
     window.location.search = urlParams;
   }
 };
@@ -348,13 +378,13 @@ const renderAlbumForm = async () => {
   switch (action) {
     case "edit":
       const albumParam = url.get("album");
-      const artistName = url.get("artist");
-      checkAndRedirect([albumParam, artistName], "?action=new");
+      const artistID = url.get("artist_id");
+      checkAndRedirect([albumParam, artistID], "?action=new");
       const {
         album: { name, photo, title, artist_id, album_id },
         album,
         songs,
-      } = await fetch(`/api/albums/${artistName}/${albumParam}`).then(
+      } = await fetch(`/api/artists/${artistID}/album/${albumParam}`).then(
         (response) => response.json()
       );
 
@@ -582,6 +612,8 @@ const renderOrders = async () => {
   const response = await fetch("/api/orders");
   const { orders, cart } = await response.json();
 
+  console.log(orders, cart);
+
   const targetDiv = document.getElementById("details");
   const hasCart = cart.balance !== null && cart.albums !== null;
 
@@ -605,6 +637,12 @@ const renderOrders = async () => {
   if (hasCart && orders.length > 0) {
     const lineBr = element("hr");
     targetDiv.appendChild(lineBr);
+  }
+
+  if (orders.length === 0 && !hasCart) {
+    const orderHeader = element("h2");
+    orderHeader.innerText = "Your cart is empty";
+    targetDiv.appendChild(orderHeader);
   }
 
   if (orders.length > 0) {
@@ -659,8 +697,10 @@ const renderAlbumTable = (albums) => {
 
   albums.forEach((album) => {
     const row = element("tr");
+    const albumCopy = { ...album };
+    delete albumCopy.artist_id;
 
-    Object.keys(album).forEach((key) => {
+    Object.keys(albumCopy).forEach((key) => {
       const td = element("td");
       switch (key) {
         case "artist":
@@ -669,9 +709,11 @@ const renderAlbumTable = (albums) => {
           let albumUri = "";
 
           if (key === "artist") {
-            albumUri += `/artist/${toUrlCase(album["artist"])}`;
+            albumUri += `/artist/${album["artist_id"]}/${toUrlCase(
+              album["artist"]
+            )}`;
           } else if (key === "title") {
-            albumUri += `/artist/${toUrlCase(
+            albumUri += `/artist/${album["artist_id"]}/${toUrlCase(
               album["artist"]
             )}/album/${toUrlCase(album["title"])}`;
             const hiddenA = element("a");
@@ -695,6 +737,8 @@ const renderAlbumTable = (albums) => {
           image.classList.add("table-img");
           td.appendChild(image);
           break;
+        case "artist_id":
+          break;
         default:
           td.innerText = album[key];
       }
@@ -711,8 +755,8 @@ const renderArtist = async () => {
     location: { pathname },
   } = window;
 
-  const artist = pathname.split("/")[2];
-  const url = `/api/artist/${artist}?view=user`;
+  const artist_id = pathname.split("/")[2];
+  const url = `/api/artists/${artist_id}?view=user`;
   const response = await fetch(url);
   const {
     artist: { name, albums, bio },
@@ -753,13 +797,13 @@ const renderAlbum = async () => {
   } = window;
 
   const noSpaces = pathname.replace(/%20/g, " ");
-  const artistPattern = /(?<=artist\/)[\D\d]+(?=\/album)/,
-    albumPattern = /(?<=album\/)[\D\d]+/;
-  const artist_name = noSpaces.match(artistPattern)[0],
-    album_title = noSpaces.match(albumPattern)[0];
+  const album_title = noSpaces.match(/(?<=album\/).*/)[0];
+  const artist_id = noSpaces.match(/(?<=artist\/)\d+(?=\/.*\/album)/)[0];
+
+  console.log(artist_id, album_title);
 
   const response = await fetch(
-    `/api/albums/${artist_name}/${album_title}?cart=get`
+    `/api/artists/${artist_id}/album/${album_title}?cart=get`
   );
   const { album, songs, cart } = await response.json();
 
@@ -787,7 +831,10 @@ const renderAlbum = async () => {
           break;
         case "name":
           paragraph.innerText = `${text}: `;
-          artistA.setAttribute("href", `/artist/${toUrlCase(album[info])}`);
+          artistA.setAttribute(
+            "href",
+            `/artist/${album["artist_id"]}/${toUrlCase(album[info])}`
+          );
           artistA.innerText = album[info];
           paragraph.appendChild(artistA);
           break;
@@ -923,7 +970,8 @@ const createElements = (tags) => {
 const renderAlbumTiles = (albums) => {
   const albumsDiv = document.getElementById("albums");
   albums.forEach((album) => {
-    const { title, name, photo } = album;
+    const { title, name, photo, artist_id } = album;
+
     const [targetDiv, anchor, image] = elements(["div", "a", "img"]);
 
     const paragraphs = Object.keys(album)
@@ -937,7 +985,9 @@ const renderAlbumTiles = (albums) => {
       });
 
     targetDiv.classList.add("albums-div");
-    const albumUri = `/artist/${toUrlCase(name)}/album/${toUrlCase(title)}`;
+    const albumUri = `/artist/${artist_id}/${toUrlCase(name)}/album/${toUrlCase(
+      title
+    )}`;
     anchor.setAttribute("href", albumUri);
     anchor.innerText = `${name} - ${title}`;
     image.src = `/common/${photo}`;
